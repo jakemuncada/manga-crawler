@@ -142,7 +142,7 @@ class Page:
         logger.debug('Updating page %d properties (%s) based on soup...', self.num, self.pageUrl)
 
         # Get the image URL
-        imageUrl = Page.getImageUrl(soup)
+        imageUrl = self.getImageUrl(soup)
         self.imageUrl = imageUrl
 
         # Get the filename for the download file (for later use)

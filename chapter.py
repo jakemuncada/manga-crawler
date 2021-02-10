@@ -117,12 +117,12 @@ class Chapter:
         logger.debug('Updating chapter %d properties (%s) based on soup...', self.num, self.url)
 
         # Get the title of the chapter from its soup.
-        title = Chapter.getTitle(soup)
+        title = self.getTitle(soup)
 
         # Get the page URLs. This may involve fetching other pages
         # if the main manga page doesn't contain all the chapter URLs.
         # The list should be in increasing order in terms of page number.
-        pages = Chapter.getPages(soup)
+        pages = self.getPages(soup)
 
         # Update the properties
         self.title = title
