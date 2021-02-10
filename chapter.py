@@ -69,7 +69,7 @@ class Chapter:
         """
 
         # TODO Implement manga-specific getTitle
-        title = 'SampleChapterTitle'
+        title = f'SampleChapterTitle{self.num}'
 
         return title
 
@@ -98,6 +98,31 @@ class Chapter:
             pages.append(Page(self, idx + 1, pageUrl))
 
         return pages
+
+    def getDirectoryName(self):
+        """
+        Get the chapter directory name.
+
+        Raises:
+            AttributeError if the title is None.
+
+        Returns:
+            The manga directory name.
+        """
+        logger.debug("Converting '%s' Chapter %d title (%s) to directory name...",
+                     self.manga.title, self.num, self.title)
+
+        if self.title is None:
+            raise AttributeError('Chapter title not found.')
+
+        dirName = self.title
+        invalidFilenameChars = '<>:"/\\|?*.'
+        for invalidChar in invalidFilenameChars:
+            dirName = dirName.replace(invalidChar, '_')
+
+        logger.debug("Directory name of '%s' Chapter %d is '%s'.",
+                     self.manga.title, self.num, dirName)
+        return dirName
 
     ##################################################
     # UPDATE

@@ -202,9 +202,15 @@ class Page:
         if self.filename is None:
             raise AttributeError('Image filename not found.')
 
+        mangaDirName = self.manga.getDirectoryName()
+        chapterDirName = self.chapter.getDirectoryName()
+        outputDir = os.path.join(outputDir, mangaDirName, chapterDirName)
+
         outputPath = os.path.join(outputDir, self.filename)
         logger.debug("Output path for the image of '%s' Chapter %d Page %d is: %s",
                      self.manga.title, self.chapter.num, self.num, outputDir)
+
+        os.makedirs(outputDir, exist_ok=True)
 
         err = Downloader.downloadImage(self.imageUrl, outputPath)
         if err is not None:

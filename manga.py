@@ -86,6 +86,29 @@ class Manga:
         logger.debug("Parsed %d chapters from soup (%s).", len(chapters), self.url)
         return chapters
 
+    def getDirectoryName(self):
+        """
+        Get the manga directory name.
+
+        Raises:
+            AttributeError if the title is None.
+
+        Returns:
+            The manga directory name.
+        """
+        logger.debug("Converting manga title (%s) to manga directory name...", self.title)
+
+        if self.title is None:
+            raise AttributeError('Manga title not found.')
+
+        mangaDir = self.title
+        invalidFilenameChars = '<>:"/\\|?*.'
+        for invalidChar in invalidFilenameChars:
+            mangaDir = mangaDir.replace(invalidChar, '_')
+
+        logger.debug("Directory name of '%s' is '%s'.", self.title, mangaDir)
+        return mangaDir
+
     ##################################################
     # UPDATE
     ##################################################
