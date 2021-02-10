@@ -17,6 +17,8 @@ class Page:
     The page of a manga.
 
     Attributes:
+        mangaTitle (str): The title of the manga.
+        chapterNum (int): The order number of the chapter that this page belongs to.
         num (int): The numerical order of the chapter. Considered to be unique.
         pageUrl (str): The URL of the page HTML.
         imageUrl (str): The URL of the page image.
@@ -29,8 +31,10 @@ class Page:
     # INITIALIZATION
     ##################################################
 
-    def __init__(self, num, pageUrl, imageUrl=None, filePath=None,
-                 filename=None, isDownloaded=False):
+    def __init__(self, mangaTitle, chapterNum, num, pageUrl, imageUrl=None,
+                 filePath=None, filename=None, isDownloaded=False):
+        self.mangaTitle = mangaTitle
+        self.chapterNum = chapterNum
         self.num = num
         self.pageUrl = pageUrl
         self.imageUrl = imageUrl
@@ -53,13 +57,14 @@ class Page:
             str: The URL of the page image.
         """
 
-        logger.debug('Parsing image URL of chapter %d...', self.num)
+        logger.debug('Parsing image URL of Chapter %d Page %d from soup...',
+                     self.chapterNum, self.num)
 
         # TODO Implement manga-specific getImageUrl
         imageUrl = 'https://imgs.xkcd.com/comics/vaccine_ordering.png'
 
-        logger.debug('Parsed image URL of chapter %d from soup (%s): %s',
-                     self.num, self.pageUrl, imageUrl)
+        logger.debug('Parsed image URL of Chapter %d Page %d from soup: %s',
+                     self.chapterNum, self.num, imageUrl)
 
         return imageUrl
 
@@ -76,14 +81,12 @@ class Page:
             - The image URL must not end with a '/'.
             - The image URL must end with the image's extension type (.png, .jpg, .jpeg).
 
-        Parameters:
-            num (int): The page order number.
-            imageUrl (str): The image URL.
-
         Returns:
             str: The filename for the image download file.
         """
-        logger.debug('Getting filename of page %d (%s)...', self.num, self.imageUrl)
+
+        logger.debug('Getting filename of Chapter %d Page %d (%s)...',
+                     self.chapterNum, self.num, self.imageUrl)
 
         # Check that the image URL is not None
         if self.imageUrl is None:
@@ -103,7 +106,8 @@ class Page:
         # Filename is the order number as a 4-digit number with the valid extension
         filename = f'{(self.num):04}.{ext}'
 
-        logger.debug("Filename of page %d (%s) is '%s'...", self.num, self.imageUrl, filename)
+        logger.debug("Filename of Chapter %d Page %d is '%s'...",
+                     self.chapterNum, self.num, filename)
 
         return filename
 
@@ -116,16 +120,26 @@ class Page:
         Fetch the page HTML, parse it, and update the properties.
         Raises an error if the fetching or parsing failed.
         """
+
+        logger.debug("Fetching '%s' Chapter %d Page %d HTML from %s...",
+                     self.mangaTitle, self.chapterNum, self.num, self.pageUrl)
+
         soup = None
-        logger.debug('Fetching page %d HTML from %s...', self.num, self.pageUrl)
+
+        # Send HTTP request to get page HTML
         response, err = Downloader.get(self.pageUrl)
+        # If the HTTP request failed, raise the error
         if err is not None:
             raise err
-        logger.debug('Successfully fetched page %d from %s...', self.num, self.pageUrl)
 
-        logger.debug('Parsing page %d into soup...', self.num)
+        logger.debug("Successfully fetched '%s' Chapter %d Page %d from %s...",
+                     self.mangaTitle, self.chapterNum, self.num, self.pageUrl)
+
+        logger.debug("Parsing '%s' Chapter %d Page %d into soup...",
+                     self.mangaTitle, self.chapterNum, self.num)
         soup = BeautifulSoup(response.text, 'html.parser')
-        logger.debug('Successfully parsed page %d into soup.', self.num)
+        logger.debug("Successfully parsed '%s' Chapter %d Page %d into soup.",
+                     self.mangaTitle, self.chapterNum, self.num)
 
         self.updateWithSoup(soup)
 
@@ -139,7 +153,8 @@ class Page:
         """
         # TODO - Change the implementation below to fit the specifics of your manga
 
-        logger.debug('Updating page %d properties (%s) based on soup...', self.num, self.pageUrl)
+        logger.debug("Updating '%s' Chapter %d Page %d based on soup...",
+                     self.mangaTitle, self.chapterNum, self.num)
 
         # Get the image URL
         imageUrl = self.getImageUrl(soup)
@@ -149,6 +164,9 @@ class Page:
         filename = self.getImageFilename()
         self.filename = filename
 
+        logger.debug("Updated '%s' Chapter %d Page %d.",
+                     self.mangaTitle, self.chapterNum, self.num)
+
     ##################################################
     # DOWNLOAD IMAGE
     ##################################################
@@ -157,8 +175,8 @@ class Page:
         """
         Download the image and save it to the output directory.
         """
-        logger.debug("Downloading image of page %d (%s) as '%s'...",
-                     self.num, self.imageUrl, self.filename)
+        logger.debug("Downloading image of '%s' Chapter %d Page %d (%s) as '%s'...",
+                     self.mangaTitle, self.chapterNum, self.num, self.imageUrl, self.filename)
 
         if self.imageUrl is None:
             raise AttributeError('Image URL not found.')
@@ -167,8 +185,8 @@ class Page:
             raise AttributeError('Image filename not found.')
 
         outputPath = os.path.join(outputDir, self.filename)
-        logger.debug("Output path for '%s' (page %d) is: %s",
-                     self.filename, self.num, outputDir)
+        logger.debug("Output path for the image of '%s' Chapter %d Page %d is: %s",
+                     self.mangaTitle, self.chapterNum, self.num, outputDir)
 
         err = Downloader.downloadImage(self.imageUrl, outputPath)
         if err is not None:
@@ -177,8 +195,8 @@ class Page:
         self.filePath = os.path.abspath(outputPath)
         self.isDownloaded = True
 
-        logger.debug('Successfully downloaded page %d (%s) to %s',
-                     self.num, self.imageUrl, self.filePath)
+        logger.debug("Successfully downloaded image of '%s' Chapter %d Page %d to %s",
+                     self.mangaTitle, self.chapterNum, self.num, self.filePath)
 
     ##################################################
     # REPRESENTATION

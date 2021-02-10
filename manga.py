@@ -132,6 +132,8 @@ class Manga:
         self.title = title
         self.chapters = chapters
 
+        logger.debug("Manga '%s' (%s) has been updated.", self.title, self.url)
+
     def updateFromCache(self):
         """
         Update the fresh version (self) with the cached version from the JSON file.
