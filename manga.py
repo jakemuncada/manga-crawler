@@ -35,6 +35,58 @@ class Manga:
                      'No chapters' if chapters is None else str(len(chapters)))
 
     ##################################################
+    # GETTERS
+    ##################################################
+
+    def getTitle(self, soup):
+        """
+        Get the manga title from its soup.
+
+        Parameters:
+            soup (BeautifulSoup): The manga HTML soup.
+
+        Returns:
+            str: The title of the manga.
+        """
+
+        logger.debug('Parsing manga title from soup (%s)...', self.url)
+
+        # TODO Implement manga-specific getTitle
+        title = 'SampleMangaTitle'
+
+        logger.debug("Parsed manga title '%s' from soup.", title)
+        return title
+
+    def getChapters(self, soup):
+        """
+        Get the manga chapters from its soup.
+
+        Parameters:
+            soup (BeautifulSoup): The manga HTML soup.
+
+        Returns:
+            list of Chapter: The list of Chapters of the manga.
+        """
+
+        logger.debug('Parsing manga chapters from soup (%s)...', self.url)
+
+        # TODO Implement manga-specific getChapters
+
+        chapterUrls = [
+            'https://xkcd.com/100',
+            'https://xkcd.com/200',
+            'https://xkcd.com/300'
+        ]
+
+        # Instantiate a list of skeleton chapters (chapters containing only the url).
+        chapters = []
+        for idx, chapterUrl in enumerate(chapterUrls):
+            chapters.append(Chapter(idx + 1, chapterUrl))
+
+        logger.debug("Parsed %d chapters from soup (%s).", len(chapters), self.url)
+        return chapters
+
+    ##################################################
     # UPDATE
     ##################################################
 
@@ -122,57 +174,3 @@ class Manga:
         title = 'Untitled' if self.title is None else self.title
         chapters = 'No chapters' if len(self.chapters) == 0 else f'{len(self.chapters)} chapters'
         return f'{self.url}  ({title})  ({chapters})'
-
-    ##################################################
-    # STATIC METHODS
-    ##################################################
-
-    @staticmethod
-    def getTitle(soup):
-        """
-        Get the manga title from its soup.
-
-        Parameters:
-            soup (BeautifulSoup): The manga HTML soup.
-
-        Returns:
-            str: The title of the manga.
-        """
-
-        logger.debug('Parsing manga title from soup...')
-
-        # TODO Implement manga-specific getTitle
-        title = 'SampleMangaTitle'
-
-        logger.debug("Parsed manga title '%s' from soup.", title)
-        return title
-
-    @staticmethod
-    def getChapters(soup):
-        """
-        Get the manga chapters from its soup.
-
-        Parameters:
-            soup (BeautifulSoup): The manga HTML soup.
-
-        Returns:
-            list of Chapter: The list of Chapters of the manga.
-        """
-
-        logger.debug('Parsing manga chapters from soup...')
-
-        # TODO Implement manga-specific getChapters
-
-        chapterUrls = [
-            'https://sample.com/chapter-1',
-            'https://sample.com/chapter-2',
-            'https://sample.com/chapter-3'
-        ]
-
-        # Instantiate a list of skeleton chapters (chapters containing only the url).
-        chapters = []
-        for idx, chapterUrl in enumerate(chapterUrls):
-            chapters.append(Chapter(idx + 1, chapterUrl))
-
-        logger.debug("Parsed %d chapters from soup.", len(chapters))
-        return chapters
