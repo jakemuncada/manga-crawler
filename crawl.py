@@ -97,14 +97,14 @@ class MangaCrawler:
         # Start the chapter downloader threads
         for idx in range(self.chapterThreadCount):
             threadName = f'ChapterDownloaderThread{idx+1}'
-            t = Thread(target=self.processChapter, args=(threadName,))
+            t = Thread(name=threadName, target=self.processChapter, args=(threadName,))
             self._chapterThreads.append(t)
             t.start()
 
         # Start the page downloader threads
         for _ in range(self.pageThreadCount):
             threadName = f'PageDownloaderThread{idx+1}'
-            t = Thread(target=self.processPage, args=(threadName,))
+            t = Thread(name=threadName, target=self.processPage, args=(threadName,))
             self._pageThreads.append(t)
             t.start()
 
@@ -116,8 +116,10 @@ class MangaCrawler:
             # Wait for all the threads to finish
             logger.debug('Nearly done... Waiting for the last download threads to finish...')
             for t in self._chapterThreads:
+                logger.debug('Waiting for %s...', t.name)
                 t.join()
             for t in self._pageThreads:
+                logger.debug('Waiting for %s...', t.name)
                 t.join()
 
             logger.info('Finished downloading %s.', self.manga.title)
@@ -235,6 +237,8 @@ class MangaCrawler:
             self._killEvent.set()
 
             for t in self._chapterThreads:
+                logger.debug('%s is terminating...', t.name)
                 t.join()
             for t in self._pageThreads:
+                logger.debug('%s is terminating...', t.name)
                 t.join()
