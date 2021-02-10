@@ -95,14 +95,16 @@ class MangaCrawler:
             self._chapterQueue.put(chapter)
 
         # Start the chapter downloader threads
-        for _ in range(self.chapterThreadCount):
-            t = Thread(target=self.processChapter)
+        for idx in range(self.chapterThreadCount):
+            threadName = f'ChapterDownloaderThread{idx+1}'
+            t = Thread(target=self.processChapter, args=(threadName,))
             self._chapterThreads.append(t)
             t.start()
 
         # Start the page downloader threads
         for _ in range(self.pageThreadCount):
-            t = Thread(target=self.processPage)
+            threadName = f'PageDownloaderThread{idx+1}'
+            t = Thread(target=self.processPage, args=(threadName,))
             self._pageThreads.append(t)
             t.start()
 
@@ -138,14 +140,24 @@ class MangaCrawler:
             # Save the manga as a JSON file
             self.manga.save(self.outputDir)
 
-    def processChapter(self):
+    def processChapter(self, threadName):
         """
         Download and parse the chapter HTML and update the chapter info.
 
         This will update the chapter title and create the list of Pages.
         These pages will then be added onto the pageQueue so they can be downloaded.
+
+        Parameters:
+            threadName (str): The thread name.
         """
-        while not self._chapterQueue.empty() and not self._killEvent.is_set():
+        # Loop until all the chapters in the queue have been processed
+        while not self._chapterQueue.empty():
+
+            # If the kill event is set, terminate the thread
+            if self._killEvent.is_set():
+                logger.debug('Kill event is set, terminating %s...', threadName)
+                break
+
             chapter = self._chapterQueue.get()
             logger.info('Processing chapter %d...', chapter.num)
             try:
@@ -174,15 +186,19 @@ class MangaCrawler:
 
             self._chapterQueue.task_done()
 
-    def processPage(self):
+    def processPage(self, threadName):
         """
         Download the page image and update the page info.
+
+        Parameters:
+            threadName (str): The thread name.
         """
         # The page thread will end if the endEvent is set and the pageQueue is empty
         while not self._endEvent.is_set() or not self._pageQueue.empty():
 
             # If the kill event is set, terminate the thread
             if self._killEvent.is_set():
+                logger.debug('Kill event is set, terminating %s...', threadName)
                 break
 
             # If the pageQueue is empty, do nothing
