@@ -81,7 +81,7 @@ class Manga:
         # Instantiate a list of skeleton chapters (chapters containing only the url).
         chapters = []
         for idx, chapterUrl in enumerate(chapterUrls):
-            chapters.append(Chapter(self.title, idx + 1, chapterUrl))
+            chapters.append(Chapter(self, idx + 1, chapterUrl))
 
         logger.debug("Parsed %d chapters from soup (%s).", len(chapters), self.url)
         return chapters
