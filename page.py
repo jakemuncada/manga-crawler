@@ -58,7 +58,7 @@ class Page:
         Returns:
             str: The filename for the image download file.
         """
-        logger.debug('Getting filename of page %d (%s)...', self.num + 1, self.imageUrl)
+        logger.debug('Getting filename of page %d (%s)...', self.num, self.imageUrl)
 
         # Check that the image URL is not None
         if self.imageUrl is None:
@@ -76,9 +76,9 @@ class Page:
             raise ValueError('Image URL is not a valid image type.')
 
         # Filename is the order number as a 4-digit number with the valid extension
-        filename = f'{(self.num + 1):04}.{ext}'
+        filename = f'{(self.num):04}.{ext}'
 
-        logger.debug("Filename of page %d (%s) is '%s'...", self.num + 1, self.imageUrl, filename)
+        logger.debug("Filename of page %d (%s) is '%s'...", self.num, self.imageUrl, filename)
 
         return filename
 
@@ -133,7 +133,7 @@ class Page:
         Download the image and save it to the output directory.
         """
         logger.debug("Downloading image of page %d (%s) as '%s'...",
-                     self.num + 1, self.imageUrl, self.filename)
+                     self.num, self.imageUrl, self.filename)
 
         if self.imageUrl is None:
             raise AttributeError('Image URL not found.')
@@ -143,7 +143,7 @@ class Page:
 
         outputPath = os.path.join(outputDir, self.filename)
         logger.debug("Output path for '%s' (page %d) is: %s",
-                     self.filename, self.num + 1, outputDir)
+                     self.filename, self.num, outputDir)
 
         err = Downloader.downloadImage(self.imageUrl, outputPath)
         if err is not None:
@@ -153,7 +153,7 @@ class Page:
         self.isDownloaded = True
 
         logger.debug('Successfully downloaded page %d (%s) to %s',
-                     self.num + 1, self.imageUrl, self.filePath)
+                     self.num, self.imageUrl, self.filePath)
 
     ##################################################
     # REPRESENTATION

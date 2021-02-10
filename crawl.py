@@ -147,7 +147,7 @@ class MangaCrawler:
         """
         while not self._chapterQueue.empty() and not self._killEvent.is_set():
             chapter = self._chapterQueue.get()
-            logger.info('Processing chapter %d...', chapter.num + 1)
+            logger.info('Processing chapter %d...', chapter.num)
             try:
                 # Fetch the chapter HTML and update its properties
                 chapter.fetch()
@@ -161,7 +161,7 @@ class MangaCrawler:
                 # Put all the pages in the pageQueue
                 for page in chapter.pages:
                     logger.debug('Adding page %d of chapter %d to the page queue.',
-                                 page.num + 1, chapter.num + 1)
+                                 page.num, chapter.num)
                     self._pageQueue.put(page)
 
                 # Save the manga JSON
@@ -183,7 +183,7 @@ class MangaCrawler:
             # If the pageQueue is empty, do nothing
             if not self._pageQueue.empty():
                 page = self._pageQueue.get()
-                logger.info('Processing page %d...', page.num + 1)
+                logger.info('Processing page %d...', page.num)
 
                 # Fetch the page HTML and update its properties
                 try:
@@ -199,7 +199,7 @@ class MangaCrawler:
                         page.downloadImage(self.outputDir)
                 except Exception as err:  # pylint: disable=broad-except
                     logger.error('Failed to download image of page %d: %s, %s',
-                                 page.num + 1, page.imageUrl, err)
+                                 page.num, page.imageUrl, err)
 
                 self._pageQueue.task_done()
 

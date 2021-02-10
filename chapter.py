@@ -147,6 +147,6 @@ class Chapter:
         # Instantiate a list of skeleton pages (pages containing only the url).
         pages = []
         for idx, pageUrl in enumerate(pageUrls):
-            pages.append(Page(idx, pageUrl))
+            pages.append(Page(idx + 1, pageUrl))
 
         return pages
