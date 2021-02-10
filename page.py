@@ -47,6 +47,10 @@ class Page:
 
     @property
     def chapter(self):
+        """
+        A weak reference to the parent chapter.
+        Raises LookupError if parent is None.
+        """
         if not self._chapter:
             raise LookupError("Parent chapter not found.")
         _chapter = self._chapter()
@@ -57,6 +61,10 @@ class Page:
 
     @property
     def manga(self):
+        """
+        A weak reference to the parent manga.
+        Raises LookupError if parent is None.
+        """
         return self.chapter.manga
 
     ##################################################

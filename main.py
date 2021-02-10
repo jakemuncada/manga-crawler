@@ -1,3 +1,7 @@
+"""
+The main entry to the manga crawler script.
+"""
+
 import os
 import logging
 from crawl import MangaCrawler
