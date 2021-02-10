@@ -37,6 +37,52 @@ class Chapter:
                      'No pages' if pages is None else str(len(pages)))
 
     ##################################################
+    # GETTERS
+    ##################################################
+
+    def getTitle(self, soup):
+        """
+        Get the chapter title from its soup.
+
+        Parameters:
+            soup (BeautifulSoup): The chapter HTML soup.
+
+        Returns:
+            str: The title of the chapter.
+        """
+
+        # TODO Implement manga-specific getTitle
+        title = 'SampleChapterTitle'
+
+        return title
+
+    def getPages(self, soup):
+        """
+        Get the pages from the chapter's HTML soup.
+
+        Parameters:
+            soup (BeautifulSoup): The chapter HTML soup.
+
+        Returns:
+            list of Page: The list of Pages of the manga.
+        """
+
+        # TODO Implement manga-specific getChapters
+
+        pageUrls = [
+            'https://xkcd.com/201',
+            'https://xkcd.com/202',
+            'https://xkcd.com/203'
+        ]
+
+        # Instantiate a list of skeleton pages (pages containing only the url).
+        pages = []
+        for idx, pageUrl in enumerate(pageUrls):
+            pages.append(Page(idx + 1, pageUrl))
+
+        return pages
+
+    ##################################################
     # UPDATE
     ##################################################
 
@@ -98,55 +144,3 @@ class Chapter:
         title = 'Untitled' if self.title is None else self.title
         pages = 'No pages' if len(self.pages) == 0 else f'{len(self.pages)} pages'
         return f'Chapter {self.num}: {self.url}  ({title})  ({pages})'
-
-    ##################################################
-    # STATIC METHODS
-    ##################################################
-
-    @staticmethod
-    def getTitle(soup):
-        """
-        Get the chapter title from its soup.
-
-        Parameters:
-            soup (BeautifulSoup): The chapter HTML soup.
-
-        Returns:
-            str: The title of the chapter.
-        """
-
-        # TODO Move static method into instance method
-
-        # TODO Implement manga-specific getTitle
-        title = 'SampleChapterTitle'
-
-        return title
-
-    @staticmethod
-    def getPages(soup):
-        """
-        Get the pages from the chapter's HTML soup.
-
-        Parameters:
-            soup (BeautifulSoup): The chapter HTML soup.
-
-        Returns:
-            list of Page: The list of Pages of the manga.
-        """
-
-        # TODO Move static method into instance method
-
-        # TODO Implement manga-specific getChapters
-
-        pageUrls = [
-            'https://xkcd.com/101',
-            'https://xkcd.com/102',
-            'https://xkcd.com/103'
-        ]
-
-        # Instantiate a list of skeleton pages (pages containing only the url).
-        pages = []
-        for idx, pageUrl in enumerate(pageUrls):
-            pages.append(Page(idx + 1, pageUrl))
-
-        return pages

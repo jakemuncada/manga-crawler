@@ -39,6 +39,31 @@ class Page:
         self.isDownloaded = isDownloaded
 
     ##################################################
+    # GETTERS
+    ##################################################
+
+    def getImageUrl(self, soup):
+        """
+        Get the image URL from its soup.
+
+        Parameters:
+            soup (BeautifulSoup): The page's HTML soup.
+
+        Returns:
+            str: The URL of the page image.
+        """
+
+        logger.debug('Parsing image URL of chapter %d...', self.num)
+
+        # TODO Implement manga-specific getImageUrl
+        imageUrl = 'https://imgs.xkcd.com/comics/vaccine_ordering.png'
+
+        logger.debug('Parsed image URL of chapter %d from soup (%s): %s',
+                     self.num, self.pageUrl, imageUrl)
+
+        return imageUrl
+
+    ##################################################
     # UPDATE
     ##################################################
 
@@ -166,28 +191,3 @@ class Page:
         imageUrl = 'No image URL' if self.imageUrl is None else self.imageUrl
         filename = 'No filename' if self.filename is None else self.filename
         return f'Page {self.num}: {imageUrl}  ({filename})  ({self.isDownloaded})'
-
-    ##################################################
-    # STATIC METHODS
-    ##################################################
-
-    @staticmethod
-    def getImageUrl(soup):
-        """
-        Get the image URL from its soup.
-
-        Parameters:
-            soup (BeautifulSoup): The page's HTML soup.
-
-        Returns:
-            str: The URL of the page image.
-        """
-
-        # TODO Move static method into instance method
-
-        # TODO Implement manga-specific getImageUrl
-        imageUrl = 'https://imgs.xkcd.com/comics/vaccine_ordering.png'
-
-        logger.debug('Parsed image URL from soup: %s', imageUrl)
-
-        return imageUrl
