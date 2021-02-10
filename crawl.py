@@ -178,8 +178,13 @@ class MangaCrawler:
         """
         Download the page image and update the page info.
         """
-        # The page thread will end if the endEvent or the killEvent is set
-        while not self._endEvent.is_set() and not self._killEvent.is_set():
+        # The page thread will end if the endEvent is set and the pageQueue is empty
+        while not self._endEvent.is_set() or not self._pageQueue.empty():
+
+            # If the kill event is set, terminate the thread
+            if self._killEvent.is_set():
+                break
+
             # If the pageQueue is empty, do nothing
             if not self._pageQueue.empty():
                 page = self._pageQueue.get()

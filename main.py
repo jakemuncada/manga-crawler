@@ -36,7 +36,7 @@ def initLogging():
     handler.setFormatter(formatter)
 
     # Set level to INFO
-    handler.setLevel(logging.DEBUG)
+    handler.setLevel(logging.INFO)
 
     logging.getLogger().addHandler(handler)
 
