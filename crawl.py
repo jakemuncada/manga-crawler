@@ -313,30 +313,6 @@ class MangaCrawler:
     # PROCESS PAGE
     ################################################################################################
 
-    def processPage(self, page):
-        """
-        Download the page image and update the page info.
-
-        Parameters:
-            page (Page): The page to be downloaded.
-        """
-        # If the page has already been downloaded, there is nothing to do here
-        if page.isDownloaded:
-            logger.debug("Skipping '%s' chapter %d page %d...",
-                         page.mangaTitle, page.chapterNum, page.num)
-            return
-
-        logger.debug("Processing '%s' chapter %d page %d...",
-                     page.mangaTitle, page.chapterNum, page.num)
-
-        try:
-            # Try to download the image
-            page.downloadImage(self.outputDir)
-        except Exception as err:  # pylint: disable=broad-except
-            logger.error("Failed to download image: '%s' page %d of chapter %d (%s), %s",
-                         page.mangaTitle, page.num, page.chapterNum, page.imageUrl, err)
-            self._failedPages.put(page)
-
     def pageWorker(self, threadName, pageQueue):
         """
         Work function of the page threads which contains the loop
@@ -360,6 +336,30 @@ class MangaCrawler:
                 page = pageQueue.get()
                 self.processPage(page)
                 pageQueue.task_done()
+
+    def processPage(self, page):
+        """
+        Download the page image and update the page info.
+
+        Parameters:
+            page (Page): The page to be downloaded.
+        """
+        # If the page has already been downloaded, there is nothing to do here
+        if page.isDownloaded:
+            logger.debug("Skipping '%s' chapter %d page %d...",
+                         page.mangaTitle, page.chapterNum, page.num)
+            return
+
+        logger.debug("Processing '%s' chapter %d page %d...",
+                     page.mangaTitle, page.chapterNum, page.num)
+
+        try:
+            # Try to download the image
+            page.downloadImage(self.outputDir)
+        except Exception as err:  # pylint: disable=broad-except
+            logger.error("Failed to download image: '%s' page %d of chapter %d (%s), %s",
+                         page.mangaTitle, page.num, page.chapterNum, page.imageUrl, err)
+            self._failedPages.put(page)
 
     ################################################################################################
     # STOP
