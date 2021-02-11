@@ -174,6 +174,8 @@ class Page:
             chapter (Chapter): The new chapter parent.
         """
         self._chapter = weakref.ref(chapter)
+        self.mangaTitle = chapter.manga.title
+        self.chapterNum = chapter.num
 
     ################################################################################################
     # UPDATE

@@ -189,6 +189,7 @@ class Chapter:
             manga (Manga): The new manga parent.
         """
         self._manga = weakref.ref(manga)
+        self.mangaTitle = manga.title
 
     ################################################################################################
     # UPDATE

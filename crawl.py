@@ -172,7 +172,7 @@ class MangaCrawler:
         _chapterThreads = []
         for idx in range(self.chapterThreadCount):
             threadName = f'ChapterDownloaderThread{idx+1}'
-            t = Thread(name=threadName, target=self.processChapter,
+            t = Thread(name=threadName, target=self.chapterWorker,
                        args=(threadName, chapterQueue, pageQueue))
             _chapterThreads.append(t)
             t.start()
@@ -181,7 +181,8 @@ class MangaCrawler:
         _pageThreads = []
         for _ in range(self.pageThreadCount):
             threadName = f'PageDownloaderThread{idx+1}'
-            t = Thread(name=threadName, target=self.processPage, args=(threadName, pageQueue))
+            t = Thread(name=threadName, target=self.pageWorker,
+                       args=(threadName, pageQueue))
             _pageThreads.append(t)
             t.start()
 
@@ -228,12 +229,56 @@ class MangaCrawler:
     # PROCESS CHAPTER
     ################################################################################################
 
-    def processChapter(self, threadName, chapterQueue, pageQueue):
+    def processChapter(self, chapter, pageQueue):
         """
         Download and parse the chapter HTML and update the chapter info.
 
         This will update the chapter title and create the list of Pages.
         These pages will then be added onto the pageQueue so they can be downloaded.
+
+        Parameters:
+            chapter (Chapter): The chapter to be processed.
+            pageQueue (Queue of Page): The queue containing the pages to be downloaded.
+        """
+        # If all the pages of the chapter have been downloaded, there is nothing to do here
+        if chapter.isDownloaded:
+            logger.debug("Skipping '%s' chapter %d...", chapter.mangaTitle, chapter.num)
+            return
+
+        logger.info("Processing '%s' chapter %d...", chapter.mangaTitle, chapter.num)
+
+        # Fetch the chapter HTML and update its properties
+        # only if its pages list is empty or if the title isn't set.
+        if len(chapter.pages) == 0 or chapter.title is None:
+            try:
+                chapter.fetch()
+                chapterReady = True
+            except Exception as err:  # pylint: disable=broad-except
+                logger.error("Failed to fetch '%s' chapter %d (%s), %s",
+                             chapter.mangaTitle, chapter.num, chapter.url, err)
+                logger.exception(err)
+                chapterReady = False
+                self._failedChapters.put(chapter)
+        else:
+            # If the chapter's title is set and it already has pages in its page list,
+            # we can process those without re-fetching the chapter.
+            chapterReady = True
+
+        if chapterReady:
+            # Put all the pages in the pageQueue
+            for page in chapter.pages:
+                logger.debug("Adding '%s' page %d of chapter %d to the page queue.",
+                             page.mangaTitle, page.num, chapter.num)
+                pageQueue.put(page)
+
+            # Save the manga cache file
+            self.saveManga()
+
+    def chapterWorker(self, threadName, chapterQueue, pageQueue):
+        """
+        Work function of the chapter threads which contains the loop
+        that continues until all the chapters in the chapter queue have been processed.
+        (Or until the user interrupts by pressing Ctrl + C.)
 
         Parameters:
             threadName (str): The thread name.
@@ -248,60 +293,55 @@ class MangaCrawler:
                 logger.debug('Kill event is set, terminating %s...', threadName)
                 break
 
+            # Get the next chapter in the queue
             chapter = chapterQueue.get()
 
-            # Process the chapter only if it hasn't been downloaded
-            # i.e. all of its pages have been downloaded already.
-            if not chapter.isDownloaded:
+            # Process the chapter
+            self.processChapter(chapter, pageQueue)
 
-                logger.info('Processing chapter %d...', chapter.num)
-
-                # Fetch the chapter HTML and update its properties
-                # only if its pages list is empty or if the title isn't set.
-                if len(chapter.pages) == 0 or chapter.title is None:
-                    try:
-                        chapter.fetch()
-                        chapterReady = True
-                    except Exception as err:  # pylint: disable=broad-except
-                        logger.error("Failed to fetch chapter %s of '%s', %s",
-                                     chapter.url, self.manga.title, err)
-                        logger.exception(err)
-                        chapterReady = False
-                        self._failedChapters.put(chapter)
-                else:
-                    # If the chapter already has pages in its list,
-                    # we can process those without fetching the chapter.
-                    chapterReady = True
-
-                if chapterReady:
-                    # Put all the pages in the pageQueue
-                    for page in chapter.pages:
-                        logger.debug('Adding page %d of chapter %d to the page queue.',
-                                     page.num, chapter.num)
-                        pageQueue.put(page)
-
-                    # Save the manga cache file
-                    self.saveManga()
-
-            # Otherwise, do not process the chapter if all its pages have been downloaded already
-            else:
-                logger.info("Skipping chapter %d...",
-                            chapter.num)
-
-            # If the chapterQueue is empty, set the endEvent
+            # Now that the chapter has been processed, check if the chapterQueue is empty
             if chapterQueue.empty():
                 logger.debug('Chapter queue is empty, setting end event...')
+                # If the queue is empty, tell the crawler that the manga is finished downloading
+                # once all the pages in the page queue are downloaded.
                 self._endEvent.set()
 
+            # Notify the queue that the chapter is done processing
             chapterQueue.task_done()
 
     ################################################################################################
     # PROCESS PAGE
     ################################################################################################
 
-    def processPage(self, threadName, pageQueue):
+    def processPage(self, page):
         """
         Download the page image and update the page info.
+
+        Parameters:
+            page (Page): The page to be downloaded.
+        """
+        # If the page has already been downloaded, there is nothing to do here
+        if page.isDownloaded:
+            logger.debug("Skipping '%s' chapter %d page %d...",
+                         page.mangaTitle, page.chapterNum, page.num)
+            return
+
+        logger.debug("Processing '%s' chapter %d page %d...",
+                     page.mangaTitle, page.chapterNum, page.num)
+
+        try:
+            # Try to download the image
+            page.downloadImage(self.outputDir)
+        except Exception as err:  # pylint: disable=broad-except
+            logger.error("Failed to download image: '%s' page %d of chapter %d (%s), %s",
+                         page.mangaTitle, page.num, page.chapterNum, page.imageUrl, err)
+            self._failedPages.put(page)
+
+    def pageWorker(self, threadName, pageQueue):
+        """
+        Work function of the page threads which contains the loop
+        that continues until all the pages in the page queue have been processed.
+        (Or until the user interrupts by pressing Ctrl + C.)
 
         Parameters:
             threadName (str): The thread name.
@@ -317,27 +357,8 @@ class MangaCrawler:
 
             # If the pageQueue is empty, do nothing
             if not pageQueue.empty():
-
                 page = pageQueue.get()
-
-                # Process the page only if it hasn't been downloaded
-                if not page.isDownloaded:
-
-                    logger.debug("Processing '%s' page %d of chapter %d...", page.mangaTitle, page.num, page.chapterNum)
-
-                    # Download the image if the fetch block above did not raise an exception
-                    try:
-                        page.downloadImage(self.outputDir)
-                    except Exception as err:  # pylint: disable=broad-except
-                        logger.error("Failed to download image: '%s' page %d of chapter %d (%s), %s",
-                                     page.mangaTitle, page.num, page.chapterNum, page.imageUrl, err)
-                        self._failedPages.put(page)
-
-                # Otherwise, skip the page if it has already been downloaded
-                else:
-                    logger.info("Skipping page %d of chapter %d...",
-                                page.num, page.chapterNum)
-
+                self.processPage(page)
                 pageQueue.task_done()
 
     ################################################################################################
