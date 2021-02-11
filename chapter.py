@@ -19,6 +19,7 @@ class Chapter:
 
     Attributes:
         manga (Manga): A weak reference to the parent manga.
+        mangaTitle (str): The title of the manga.
         num (int): The numerical order of the chapter. Considered to be unique.
         url (str): The URL of the main manga page.
         title (str): The title of the manga.
@@ -31,6 +32,7 @@ class Chapter:
 
     def __init__(self, manga, num, url, title=None, pages=None):
         self._manga = weakref.ref(manga)
+        self.mangaTitle = manga.title
         self.num = num
         self.url = url
         self.title = title
@@ -160,7 +162,7 @@ class Chapter:
 
         # TODO Implement manga-specific getChapters
         logger.debug("Parsing pages of '%s' Chapter %d from its soup...",
-                     self.manga.title, self.num, )
+                     self.mangaTitle, self.num, )
 
         pageUrls = [
             'https://xkcd.com/201',
@@ -198,7 +200,7 @@ class Chapter:
         Raises an error if the fetching or parsing failed.
         """
         logger.debug("Fetching '%s' Chapter %d HTML from %s...",
-                     self.manga.title, self.num, self.url)
+                     self.mangaTitle, self.num, self.url)
 
         soup = None
 
@@ -209,11 +211,11 @@ class Chapter:
             raise err
 
         logger.debug("Successfully fetched '%s' Chapter %d from %s...",
-                     self.manga.title, self.num, self.url)
+                     self.mangaTitle, self.num, self.url)
 
-        logger.debug("Parsing '%s' Chapter %d into soup...", self.manga.title, self.num)
+        logger.debug("Parsing '%s' Chapter %d into soup...", self.mangaTitle, self.num)
         soup = BeautifulSoup(response.text, 'html.parser')
-        logger.debug("Successfully parsed '%s' Chapter %d into soup.", self.manga.title, self.num)
+        logger.debug("Successfully parsed '%s' Chapter %d into soup.", self.mangaTitle, self.num)
 
         self.updateWithSoup(soup)
 
@@ -227,7 +229,7 @@ class Chapter:
         """
         # TODO - Change the implementation below to fit the specifics of your manga
 
-        logger.debug("Updating '%s' Chapter %d based on soup...", self.manga.title, self.num)
+        logger.debug("Updating '%s' Chapter %d based on soup...", self.mangaTitle, self.num)
 
         # Get the title of the chapter from its soup.
         title = self.getTitle(soup)
@@ -241,7 +243,7 @@ class Chapter:
         self.title = title
         self.pages = pages
 
-        logger.debug("Chapter %d of '%s' has been updated.", self.num, self.manga.title)
+        logger.debug("Chapter %d of '%s' has been updated.", self.num, self.mangaTitle)
 
     ################################################################################################
     # REPRESENTATION
