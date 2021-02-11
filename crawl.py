@@ -317,8 +317,10 @@ class MangaCrawler:
         if chapterReady:
             # Put all the pages in the pageQueue
             for page in chapter.pages:
-                logger.debug("Adding '%s' page %d of chapter %d to the page queue.",
-                             page.mangaTitle, page.num, chapter.num)
+                if self._killEvent.is_set():
+                    break
+                logger.debug("Adding '%s' chapter %d page %d to the page queue.",
+                             page.mangaTitle, chapter.num, page.num)
                 pageQueue.put(page)
 
             # Save the manga cache file
