@@ -229,6 +229,41 @@ class MangaCrawler:
     # PROCESS CHAPTER
     ################################################################################################
 
+    def chapterWorker(self, threadName, chapterQueue, pageQueue):
+        """
+        Work function of the chapter threads which contains the loop
+        that continues until all the chapters in the chapter queue have been processed.
+        (Or until the user interrupts by pressing Ctrl + C.)
+
+        Parameters:
+            threadName (str): The thread name.
+            chapterQueue (Queue of Chapter): The queue containing the chapters to be processed.
+            pageQueue (Queue of Page): The queue containing the pages to be downloaded.
+        """
+        # Loop until all the chapters in the queue have been processed
+        while not chapterQueue.empty():
+
+            # If the kill event is set, terminate the thread
+            if self._killEvent.is_set():
+                logger.debug('Kill event is set, terminating %s...', threadName)
+                break
+
+            # Get the next chapter in the queue
+            chapter = chapterQueue.get()
+
+            # Process the chapter
+            self.processChapter(chapter, pageQueue)
+
+            # Now that the chapter has been processed, check if the chapterQueue is empty
+            if chapterQueue.empty():
+                logger.debug('Chapter queue is empty, setting end event...')
+                # If the queue is empty, tell the crawler that the manga is finished downloading
+                # once all the pages in the page queue are downloaded.
+                self._endEvent.set()
+
+            # Notify the queue that the chapter is done processing
+            chapterQueue.task_done()
+
     def processChapter(self, chapter, pageQueue):
         """
         Download and parse the chapter HTML and update the chapter info.
@@ -273,41 +308,6 @@ class MangaCrawler:
 
             # Save the manga cache file
             self.saveManga()
-
-    def chapterWorker(self, threadName, chapterQueue, pageQueue):
-        """
-        Work function of the chapter threads which contains the loop
-        that continues until all the chapters in the chapter queue have been processed.
-        (Or until the user interrupts by pressing Ctrl + C.)
-
-        Parameters:
-            threadName (str): The thread name.
-            chapterQueue (Queue of Chapter): The queue containing the chapters to be processed.
-            pageQueue (Queue of Page): The queue containing the pages to be downloaded.
-        """
-        # Loop until all the chapters in the queue have been processed
-        while not chapterQueue.empty():
-
-            # If the kill event is set, terminate the thread
-            if self._killEvent.is_set():
-                logger.debug('Kill event is set, terminating %s...', threadName)
-                break
-
-            # Get the next chapter in the queue
-            chapter = chapterQueue.get()
-
-            # Process the chapter
-            self.processChapter(chapter, pageQueue)
-
-            # Now that the chapter has been processed, check if the chapterQueue is empty
-            if chapterQueue.empty():
-                logger.debug('Chapter queue is empty, setting end event...')
-                # If the queue is empty, tell the crawler that the manga is finished downloading
-                # once all the pages in the page queue are downloaded.
-                self._endEvent.set()
-
-            # Notify the queue that the chapter is done processing
-            chapterQueue.task_done()
 
     ################################################################################################
     # PROCESS PAGE
