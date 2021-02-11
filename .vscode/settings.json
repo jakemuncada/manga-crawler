@@ -3,6 +3,7 @@
     "python.linting.enabled": true,
     "files.exclude": {
         "**/output": true,
-        "**/__pycache__": true
+        "**/__pycache__": true,
+        "**/logs": true
     }
 }
