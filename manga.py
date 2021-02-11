@@ -2,7 +2,10 @@
 A model of the manga to be downloaded.
 """
 
+import os
+import json
 import logging
+from threading import Lock
 from bs4 import BeautifulSoup
 
 from chapter import Chapter
@@ -30,9 +33,42 @@ class Manga:
         self.url = url
         self.title = title
         self.chapters = chapters if chapters is not None else []
+
+        self._directoryName = None  # Cache of the directoryName property
+        self._cacheLock = Lock()  # Lock for thread-safe saving of JSON cache
+
         logger.debug('Initialized manga %s (%s): %s', url,
                      'untitled' if title is None else title,
                      'No chapters' if chapters is None else str(len(chapters)))
+
+    ##################################################
+    # PROPERTIES
+    ##################################################
+
+    @property
+    def directoryName(self):
+        """
+        The directory name, which is a Windows file-safe version of the manga title.
+        None if the title is None.
+        """
+        if self.title is None:
+            self._directoryName = None
+            return None
+
+        if self._directoryName is not None:
+            return self._directoryName
+
+        logger.debug("Converting manga title (%s) to manga directory name...", self.title)
+
+        mangaDirName = self.title
+        invalidFilenameChars = '<>:"/\\|?*.'
+        for invalidChar in invalidFilenameChars:
+            mangaDirName = mangaDirName.replace(invalidChar, '_')
+
+        self._directoryName = mangaDirName
+
+        logger.debug("Directory name of Manga '%s' is '%s'.", self.title, self._directoryName)
+        return self._directoryName
 
     ##################################################
     # GETTERS
@@ -85,29 +121,6 @@ class Manga:
 
         logger.debug("Parsed %d chapters from soup (%s).", len(chapters), self.url)
         return chapters
-
-    def getDirectoryName(self):
-        """
-        Get the manga directory name.
-
-        Raises:
-            AttributeError if the title is None.
-
-        Returns:
-            The manga directory name.
-        """
-        logger.debug("Converting manga title (%s) to manga directory name...", self.title)
-
-        if self.title is None:
-            raise AttributeError('Manga title not found.')
-
-        mangaDir = self.title
-        invalidFilenameChars = '<>:"/\\|?*.'
-        for invalidChar in invalidFilenameChars:
-            mangaDir = mangaDir.replace(invalidChar, '_')
-
-        logger.debug("Directory name of '%s' is '%s'.", self.title, mangaDir)
-        return mangaDir
 
     ##################################################
     # UPDATE
@@ -178,8 +191,28 @@ class Manga:
         Parameters:
             outputDir (str): The output directory.
         """
-        logger.debug('Saving to %s:  %s', outputDir, repr(self))
-        # TODO Implement save
+        logger.debug("Saving JSON cache to %s: %s", outputDir, repr(self))
+
+        self._cacheLock.acquire()
+
+        try:
+            if self.directoryName is None:
+                raise AttributeError('Directory name not found.')
+            
+            outputDir = os.path.join(outputDir, self.directoryName)
+            filePath = os.path.join(outputDir, 'cache.json')
+
+            os.makedirs(outputDir, exist_ok=True)
+
+            with open(filePath, 'w') as writer:
+                jsonStr = json.dumps(self.toDict(), indent=4)
+                writer.write(jsonStr)
+                logger.debug("Saved JSON cache of '%s' to: %s", self.title, filePath)
+        except:
+            self._cacheLock.release()
+            raise
+        else:
+            self._cacheLock.release()
 
     ##################################################
     # REPRESENTATION
@@ -199,3 +232,14 @@ class Manga:
         title = 'Untitled' if self.title is None else self.title
         chapters = 'No chapters' if len(self.chapters) == 0 else f'{len(self.chapters)} chapters'
         return f'{self.url}  ({title})  ({chapters})'
+
+    def toDict(self):
+        """
+        Returns the dictionary representation of the Manga.
+        """
+        result = {
+            'url': self.url,
+            'title': self.title,
+            'chapters': [chapter.toDict() for chapter in self.chapters]
+        }
+        return result

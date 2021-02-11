@@ -24,7 +24,7 @@ class MangaCrawler:
         outputDir (str): The output directory.
     """
 
-    def __init__(self, mangaUrls, chapterThreadCount, pageThreadCount, outputDir='./output'):
+    def __init__(self, mangaUrls, chapterThreadCount, pageThreadCount, outputDir):
         self.mangaUrls = mangaUrls
         self.chapterThreadCount = chapterThreadCount
         self.pageThreadCount = pageThreadCount
@@ -133,17 +133,19 @@ class MangaCrawler:
             logger.debug('Keyboard interrupt detected.')
             self.stop()
 
-        finally:
-            # Print the list of URLs that weren't downloaded
-            if not self._failedUrls.empty():
-                logger.info('Failed to download the following:')
-                while not self._failedUrls.empty():
-                    logger.info('   %s', self._failedUrls.get())
-            else:
-                logger.debug('All URLs were successfully fetched with no failures.')
+        # Print the list of URLs that weren't downloaded
+        if not self._failedUrls.empty():
+            logger.info('Failed to download the following:')
+            while not self._failedUrls.empty():
+                logger.info('   %s', self._failedUrls.get())
+        else:
+            logger.debug('All URLs were successfully fetched with no failures.')
 
+        try:
             # Save the manga as a JSON file
             self.manga.save(self.outputDir)
+        except Exception as err:  # pylint: disable=broad-except
+            logger.error("Failed to save '%s' JSON cache, %s", self.manga.title, err)
 
     def processChapter(self, threadName):
         """
@@ -182,8 +184,11 @@ class MangaCrawler:
                                  page.num, chapter.num)
                     self._pageQueue.put(page)
 
-                # Save the manga JSON
-                self.manga.save(self.outputDir)
+                try:
+                    # Save the manga as a JSON file
+                    self.manga.save(self.outputDir)
+                except Exception as err:  # pylint: disable=broad-except
+                    logger.error("Failed to save '%s' JSON cache, %s", self.manga.title, err)
 
             # If the chapterQueue is empty, set the endEvent
             if self._chapterQueue.empty():

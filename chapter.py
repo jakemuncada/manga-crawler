@@ -34,13 +34,14 @@ class Chapter:
         self.num = num
         self.url = url
         self.title = title
+        self._directoryName = None  # Cache of the directoryName property
         self.pages = pages if pages is not None else []
         logger.debug("Initialized '%s' Chapter %d: %s  (%s)  (%s)",
                      manga.title, num, url, 'Untitled' if title is None else title,
                      'No pages' if pages is None else str(len(pages)))
 
     ##################################################
-    # WEAK REF PROPERTIES
+    # PROPERTIES
     ##################################################
 
     @property
@@ -56,6 +57,31 @@ class Chapter:
             return _manga
         else:
             raise LookupError("Parent manga was destroyed.")
+
+    @property
+    def directoryName(self):
+        """
+        The directory name, which is a Windows file-safe version of the chapter title.
+        None if the title is None.
+        """
+        if self.title is None:
+            self._directoryName = None
+            return None
+
+        if self._directoryName is not None:
+            return self._directoryName
+
+        logger.debug("Converting chapter title (%s) to manga directory name...", self.title)
+
+        chapterDirName = self.title
+        invalidFilenameChars = '<>:"/\\|?*.'
+        for invalidChar in invalidFilenameChars:
+            chapterDirName = chapterDirName.replace(invalidChar, '_')
+
+        self._directoryName = chapterDirName
+
+        logger.debug("Directory name of Chapter '%s' is '%s'.", self.title, self._directoryName)
+        return self._directoryName
 
     ##################################################
     # GETTERS
@@ -104,31 +130,6 @@ class Chapter:
             pages.append(Page(self, idx + 1, pageUrl))
 
         return pages
-
-    def getDirectoryName(self):
-        """
-        Get the chapter directory name.
-
-        Raises:
-            AttributeError if the title is None.
-
-        Returns:
-            The manga directory name.
-        """
-        logger.debug("Converting '%s' Chapter %d title (%s) to directory name...",
-                     self.manga.title, self.num, self.title)
-
-        if self.title is None:
-            raise AttributeError('Chapter title not found.')
-
-        dirName = self.title
-        invalidFilenameChars = '<>:"/\\|?*.'
-        for invalidChar in invalidFilenameChars:
-            dirName = dirName.replace(invalidChar, '_')
-
-        logger.debug("Directory name of '%s' Chapter %d is '%s'.",
-                     self.manga.title, self.num, dirName)
-        return dirName
 
     ##################################################
     # UPDATE
@@ -201,3 +202,14 @@ class Chapter:
         title = 'Untitled' if self.title is None else self.title
         pages = 'No pages' if len(self.pages) == 0 else f'{len(self.pages)} pages'
         return f'Chapter {self.num}: {self.url}  ({title})  ({pages})'
+
+    def toDict(self):
+        """
+        Returns the dictionary representation of the Chapter.
+        """
+        result = {
+            'num': self.num,
+            'title': self.title,
+            'pages': [page.toDict() for page in self.pages]
+        }
+        return result

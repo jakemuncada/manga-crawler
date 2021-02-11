@@ -241,3 +241,17 @@ class Page:
         imageUrl = 'No image URL' if self.imageUrl is None else self.imageUrl
         filename = 'No filename' if self.filename is None else self.filename
         return f'Page {self.num}: {imageUrl}  ({filename})  ({self.isDownloaded})'
+
+    def toDict(self):
+        """
+        Returns the dictionary representation of the Page.
+        """
+        result = {
+            'num': self.num,
+            'pageUrl': self.pageUrl,
+            'imageUrl': self.imageUrl,
+            'filePath': self.filePath,
+            'filename': self.filename,
+            'isDownloaded': self.isDownloaded
+        }
+        return result
