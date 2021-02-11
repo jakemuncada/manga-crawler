@@ -19,7 +19,7 @@ class Page:
 
     Attributes:
         chapter (Chapter): A weak reference to the chapter that this page belongs to.
-        num (int): The numerical order of the chapter. Considered to be unique.
+        num (int): The numerical order of the page. Considered to be unique.
         pageUrl (str): The URL of the page HTML.
         imageUrl (str): The URL of the page image.
         filePath (str): The full path of the downloaded image.
@@ -40,6 +40,28 @@ class Page:
         self.filePath = filePath
         self.filename = filename
         self.isDownloaded = isDownloaded
+
+    @classmethod
+    def fromJson(cls, chapter, jsonData):
+        """
+        Instantitate a Page from its JSON representation.
+
+        Parameters:
+            chapter (Chapter): The parent chapter who owns this page.
+            jsonData (json): The JSON representation of the page.
+
+        Returns:
+            Page: The instantiated Page.
+        """
+        logger.debug('Instantiating a Page from its JSON representation...')
+
+        num = jsonData['num']
+        pageUrl = jsonData['pageUrl']
+        imageUrl = jsonData['imageUrl']
+        filePath = jsonData['filePath']
+        filename = jsonData['filename']
+        isDownloaded = jsonData['isDownloaded']
+        return cls(chapter, num, pageUrl, imageUrl, filePath, filename, isDownloaded)
 
     ################################################################################################
     # WEAK REF PROPERTIES

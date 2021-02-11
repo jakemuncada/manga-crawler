@@ -41,6 +41,53 @@ class Manga:
                      'untitled' if title is None else title,
                      'No chapters' if chapters is None else str(len(chapters)))
 
+    @classmethod
+    def fromCache(cls, cacheFilePath):
+        """
+        Instantitate a Manga from its JSON cache file.
+
+        Parameters:
+            cacheFilePath (str): The full path of the JSON cache file.
+
+        Returns:
+            Manga: The instantiated Manga.
+        """
+
+        logger.debug('Loading cache file: %s...', cacheFilePath)
+
+        if not os.path.exists(cacheFilePath):
+            raise IOError(f'JSON cache ({cacheFilePath}) not found.')
+
+        with open(cacheFilePath, 'r') as inputFile:
+            jsonData = json.load(inputFile)
+            logger.debug('Cache file loaded and parsed to JSON successfully: %s', cacheFilePath)
+            return Manga.fromJson(jsonData)
+
+    @classmethod
+    def fromJson(cls, jsonData):
+        """
+        Instantitate a Manga from its JSON representation.
+
+        Parameters:
+            jsonData (json): The JSON representation of the Manga.
+
+        Returns:
+            Manga: The instantiated Manga.
+        """
+        logger.debug('Instantiating a Manga from its JSON representation...')
+
+        url = jsonData['url']
+        title = jsonData['title']
+
+        # Instantiate the manga without chapters for now
+        manga = cls(url, title)
+
+        # Instantiate the chapters by passing the manga
+        chapters = [Chapter.fromJson(manga, chapter) for chapter in jsonData['chapters']]
+        manga.chapters = chapters
+
+        return manga
+
     ################################################################################################
     # PROPERTIES
     ################################################################################################

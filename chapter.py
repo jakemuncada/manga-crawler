@@ -40,6 +40,33 @@ class Chapter:
                      manga.title, num, url, 'Untitled' if title is None else title,
                      'No pages' if pages is None else str(len(pages)))
 
+    @classmethod
+    def fromJson(cls, manga, jsonData):
+        """
+        Instantitate a Chapter from its JSON representation.
+
+        Parameters:
+            manga (Manga): The parent manga who owns this chapter.
+            jsonData (json): The JSON representation of the chapter.
+
+        Returns:
+            Chapter: The instantiated Chapter.
+        """
+        logger.debug('Instantiating a Chapter from its JSON representation...')
+
+        num = jsonData['num']
+        url = jsonData['url']
+        title = jsonData['title']
+
+        # Instantiate the Chapter without pages for now
+        chapter = cls(manga, num, url, title)
+
+        # Instantiate the pages by passing the chapter
+        pages = [Page.fromJson(chapter, page) for page in jsonData['pages']]
+        chapter.pages = pages
+
+        return chapter
+
     ################################################################################################
     # PROPERTIES
     ################################################################################################
@@ -209,6 +236,7 @@ class Chapter:
         """
         result = {
             'num': self.num,
+            'url': self.url,
             'title': self.title,
             'pages': [page.toDict() for page in self.pages]
         }
