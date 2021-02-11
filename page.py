@@ -19,6 +19,7 @@ class Page:
 
     Attributes:
         chapter (Chapter): A weak reference to the chapter that this page belongs to.
+        chapterNum (int): The numerical order of the chapter that this page belongs to.
         num (int): The numerical order of the page. Considered to be unique.
         pageUrl (str): The URL of the page HTML.
         imageUrl (str): The URL of the page image.
@@ -34,6 +35,7 @@ class Page:
     def __init__(self, chapter, num, pageUrl, imageUrl=None,
                  filePath=None, filename=None, isDownloaded=False):
         self._chapter = weakref.ref(chapter)
+        self.chapterNum = chapter.num
         self.num = num
         self.pageUrl = pageUrl
         self.imageUrl = imageUrl
@@ -133,7 +135,7 @@ class Page:
         """
 
         logger.debug('Getting filename of Chapter %d Page %d (%s)...',
-                     self.chapter.num, self.num, self.imageUrl)
+                     self.chapterNum, self.num, self.imageUrl)
 
         # Check that the image URL is not None
         if self.imageUrl is None:
@@ -154,7 +156,7 @@ class Page:
         filename = f'{(self.num):04}.{ext}'
 
         logger.debug("Filename of Chapter %d Page %d is '%s'...",
-                     self.chapter.num, self.num, filename)
+                     self.chapterNum, self.num, filename)
 
         return filename
 
@@ -236,7 +238,7 @@ class Page:
         Download the image and save it to the output directory.
         """
         logger.debug("Downloading image of '%s' Chapter %d Page %d (%s) as '%s'...",
-                     self.manga.title, self.chapter.num, self.num,
+                     self.manga.title, self.chapterNum, self.num,
                      self.imageUrl, self.filename)
 
         if self.imageUrl is None:
@@ -251,7 +253,7 @@ class Page:
 
         outputPath = os.path.join(outputDir, self.filename)
         logger.debug("Output path for the image of '%s' Chapter %d Page %d is: %s",
-                     self.manga.title, self.chapter.num, self.num, outputDir)
+                     self.manga.title, self.chapterNum, self.num, outputDir)
 
         os.makedirs(outputDir, exist_ok=True)
 
@@ -263,7 +265,7 @@ class Page:
         self.isDownloaded = True
 
         logger.debug("Successfully downloaded image of '%s' Chapter %d Page %d to %s",
-                     self.manga.title, self.chapter.num, self.num, self.filePath)
+                     self.manga.title, self.chapterNum, self.num, self.filePath)
 
     ################################################################################################
     # REPRESENTATION
