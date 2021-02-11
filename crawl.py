@@ -216,9 +216,11 @@ class MangaCrawler:
             for t in chapterThreads:
                 logger.debug('Waiting for %s...', t.name)
                 t.join()
+                logger.debug('%s is done.', t.name)
             for t in pageThreads:
                 logger.debug('Waiting for %s...', t.name)
                 t.join()
+                logger.debug('%s is done.', t.name)
 
             logger.info('Finished downloading %s.', self.manga.title)
 
