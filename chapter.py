@@ -110,6 +110,23 @@ class Chapter:
         logger.debug("Directory name of Chapter '%s' is '%s'.", self.title, self._directoryName)
         return self._directoryName
 
+    @property
+    def isDownloaded(self):
+        """
+        Returns true if and only if all of the following are true:
+            - The title is not None.
+            - The list of pages is not empty.
+            - All of the pages have already been downloaded.
+        """
+        if self.title is None:
+            return False
+        if len(self.pages) == 0:
+            return False
+        for page in self.pages:
+            if not page.isDownloaded:
+                return False
+        return True
+
     ################################################################################################
     # GETTERS
     ################################################################################################
