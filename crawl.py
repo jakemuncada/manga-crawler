@@ -66,6 +66,10 @@ class MangaCrawler:
         logger.info('Start crawling through %d mangas...', len(self.mangaUrls))
 
         for mangaUrl in self.mangaUrls:
+
+            self._endEvent = Event()  # Event that signifies that the last chapter
+            # has been processed and that the program should end once the pageQueue is empty.
+
             if not self._killEvent.is_set():
                 self._crawl(mangaUrl)
 
