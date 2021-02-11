@@ -111,7 +111,7 @@ class Chapter:
     @property
     def isDownloaded(self):
         """
-        Returns true if and only if all of the following are true:
+        True if and only if all of the following are true:
             - The title is not None.
             - The list of pages is not empty.
             - All of the pages have already been downloaded.
@@ -151,8 +151,7 @@ class Chapter:
             str: The title of the chapter.
         """
 
-        # TODO Implement manga-specific getTitle
-        title = f'SampleChapterTitle{self.num}'
+        title = f'Chapter {self.num:03}'
 
         return title
 
@@ -167,20 +166,24 @@ class Chapter:
             list of Page: The list of Pages of the manga.
         """
 
-        # TODO Implement manga-specific getChapters
         logger.debug("Parsing pages of '%s' Chapter %d from its soup...",
                      self.mangaTitle, self.num, )
 
-        pageUrls = [
-            'https://xkcd.com/201',
-            'https://xkcd.com/202',
-            'https://xkcd.com/203'
-        ]
+        imageUrls = []
+
+        readingContents = soup.find('div', 'reading-content').find_all('div', 'page-break')
+        for div in readingContents:
+            src = div.find('img').attrs['src'].strip()
+            imageUrls.append(src)
 
         # Instantiate a list of skeleton pages (pages containing only the url).
         pages = []
-        for idx, pageUrl in enumerate(pageUrls):
-            pages.append(Page(self, idx + 1, pageUrl))
+        for idx, imageUrl in enumerate(imageUrls):
+            pageNum = idx + 1
+            pageUrl = None
+            filePath = None
+            page = Page(self, pageNum, pageUrl, imageUrl, filePath)
+            pages.append(page)
 
         return pages
 
@@ -235,7 +238,6 @@ class Chapter:
         Parameters:
             soup (BeautifulSoup): The chapter's HTML soup.
         """
-        # TODO - Change the implementation below to fit the specifics of your manga
 
         logger.debug("Updating '%s' Chapter %d based on soup...", self.mangaTitle, self.num)
 
