@@ -237,7 +237,7 @@ class MangaCrawler:
         except KeyboardInterrupt:
             # If Ctrl+C is pressed by the user, send a kill signal
             # and wait for the threads to finish.
-            logger.debug('Keyboard interrupt detected.')
+            logger.info('Keyboard interrupt detected.')
             self.stop(chapterThreads, pageThreads)
 
     ################################################################################################
