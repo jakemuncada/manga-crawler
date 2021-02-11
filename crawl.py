@@ -163,7 +163,10 @@ class MangaCrawler:
 
         # Populate the chapter queue
         for chapter in self.manga.chapters:
-            chapterQueue.put(chapter)
+            if not chapter.isDownloaded:
+                chapterQueue.put(chapter)
+            else:
+                logger.debug("Skipping '%s' chapter %d...", chapter.mangaTitle, chapter.num)
 
         logger.info("The manga '%s' has %d chapters. Downloading...",
                     self.manga.title, len(self.manga.chapters))
