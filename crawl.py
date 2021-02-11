@@ -59,23 +59,24 @@ class MangaCrawler:
         Crawl through and download all of the manga URLs in the list, one by one.
         Can be interrupted by Ctrl+C.
         """
-        self._chapterThreads = []  # List of the chapter downloader threads.
-        self._pageThreads = []  # List of the page downloader threads.
-
-        self._chapterQueue = Queue()  # Queue of chapters to be processed.
-        self._pageQueue = Queue()  # Queue of pages to be downloaded.
+        self.isCrawling = True
 
         self._killEvent = Event()  # If set, will trigger threads to terminate.
-        self._endEvent = Event()  # Event that signifies that the last chapter has been processed
-        # and that the program should end once the pageQueue is empty.
-
-        self._failedUrls = Queue()  # The collection of URLs that failed to be downloaded.
-
-        self.isCrawling = True
+        self._endEvent = Event()  # Event that signifies that the last chapter
+        # has been processed and that the program should end once the pageQueue is empty.
 
         logger.debug('Start crawling through %d mangas...', len(self.mangaUrls))
 
         for mangaUrl in self.mangaUrls:
+
+            self._chapterThreads = []  # List of the chapter downloader threads.
+            self._pageThreads = []  # List of the page downloader threads.
+
+            self._chapterQueue = Queue()  # Queue of chapters to be processed.
+            self._pageQueue = Queue()  # Queue of pages to be downloaded.
+
+            self._failedUrls = Queue()  # The collection of URLs that failed to be downloaded.
+
             if not self._killEvent.is_set():
                 self._crawl(mangaUrl)
 
