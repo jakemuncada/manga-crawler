@@ -57,8 +57,6 @@ class MangaCrawler:
         self.isCrawling = True
 
         self._killEvent = Event()  # If set, will trigger threads to terminate.
-        self._endEvent = Event()  # Event that signifies that the last chapter
-        # has been processed and that the program should end once the pageQueue is empty.
 
         self._failedChapters = Queue()  # The collection of chapters that failed to be processed.
         self._failedPages = Queue()  # The collection of pages that failed to be downloaded.
@@ -147,7 +145,7 @@ class MangaCrawler:
                 logger.error("Failed to retrieve previous download info about '%s', %s",
                              self.manga.title, err)
         else:
-            logger.info('No previous information about %s exists in cache.', self.manga.title)
+            logger.info('No previous download info about %s exists in cache.', self.manga.title)
 
     ################################################################################################
     # START THREADS
@@ -365,10 +363,11 @@ class MangaCrawler:
         if page.isDownloaded:
             logger.debug("Skipping '%s' chapter %d page %d...",
                          page.mangaTitle, page.chapterNum, page.num)
+            page.isProcessed = True
             return
 
-        logger.debug("Processing '%s' chapter %d page %d...",
-                     page.mangaTitle, page.chapterNum, page.num)
+        logger.info("Processing '%s' chapter %d page %d...",
+                    page.mangaTitle, page.chapterNum, page.num)
 
         try:
             # Try to download the image
@@ -377,6 +376,16 @@ class MangaCrawler:
             logger.error("Failed to download image: '%s' page %d of chapter %d (%s), %s",
                          page.mangaTitle, page.num, page.chapterNum, page.imageUrl, err)
             self._failedPages.put(page)
+
+        page.isProcessed = True
+
+        # Regardless if the page was downloaded successfully or not,
+        # as long as the page was not skipped, once it has finished processing,
+        # we can check the page's chapter if all its pages are either already downloaded
+        # or have been processed.
+        if page.chapter.isProcessed:
+            logger.info("Finished processing '%s' chapter %d.", page.mangaTitle, page.chapterNum)
+            self.saveManga()
 
     ################################################################################################
     # STOP
