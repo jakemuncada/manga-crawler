@@ -166,14 +166,20 @@ class MangaCrawler:
         """
 
         # Populate the chapter queue
+        initialChapterQueueSize = 0
         for chapter in self.manga.chapters:
             if not chapter.isDownloaded:
+                initialChapterQueueSize += 1
                 chapterQueue.put(chapter)
             else:
                 logger.debug("Skipping '%s' chapter %d...", chapter.mangaTitle, chapter.num)
 
-        logger.info("The manga '%s' has %d chapters. Downloading...",
-                    self.manga.title, len(self.manga.chapters))
+        logger.info("The manga '%s' has %d chapters. There are initially %d chapters in the queue.",
+                    self.manga.title, len(self.manga.chapters), initialChapterQueueSize)
+
+        # If the initial chapter queue size is zero, set the end event.
+        if initialChapterQueueSize == 0:
+            self._endEvent.set()
 
         # Start the chapter downloader threads
         _chapterThreads = []
