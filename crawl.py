@@ -24,6 +24,10 @@ class MangaCrawler:
         outputDir (str): The output directory.
     """
 
+    ################################################################################################
+    # INITIALIZATION
+    ################################################################################################
+
     def __init__(self, mangaUrls, chapterThreadCount, pageThreadCount, outputDir):
         self.mangaUrls = mangaUrls
         self.chapterThreadCount = chapterThreadCount
@@ -44,6 +48,10 @@ class MangaCrawler:
         # and that the program should end once the pageQueue is empty.
 
         self._failedUrls = Queue()  # The collection of URLs that failed to be downloaded.
+
+    ################################################################################################
+    # CRAWL
+    ################################################################################################
 
     def crawl(self):
         """
@@ -147,6 +155,10 @@ class MangaCrawler:
         except Exception as err:  # pylint: disable=broad-except
             logger.error("Failed to save '%s' JSON cache, %s", self.manga.title, err)
 
+    ################################################################################################
+    # PROCESS CHAPTER
+    ################################################################################################
+
     def processChapter(self, threadName):
         """
         Download and parse the chapter HTML and update the chapter info.
@@ -196,6 +208,10 @@ class MangaCrawler:
                 self._endEvent.set()
 
             self._chapterQueue.task_done()
+
+    ################################################################################################
+    # PROCESS PAGE
+    ################################################################################################
 
     def processPage(self, threadName):
         """
