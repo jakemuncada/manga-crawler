@@ -217,15 +217,56 @@ class Manga:
 
         logger.debug("Manga '%s' (%s) has been updated.", self.title, self.url)
 
-    def updateFromCache(self):
+    def updateFromCache(self, cachePath):
         """
         Update the fresh version (self) with the cached version from the JSON file.
 
         The manga may have been updated (e.g. added new chapters)
         since the last time the script was run. This will ensure
         that any new information will be included in the download.
+
+        Parameters:
+            cachePath (str): The full path of the manga cache file.
+
+        Raises:
+            IOError: If the cache file does not exist or failed to be parsed.
+
         """
-        # TODO Implement updateFromCache
+
+        logger.debug('Loading cached manga from %s...', cachePath)
+        cachedManga = Manga.fromCache(cachePath)
+        logger.debug("Cached version of '%s' has been loaded successfully.", self.title)
+
+        # Update the title
+        self.title = cachedManga.title
+
+        # For every chapter in the fresh version, if it exists in the cache,
+        # set its information to be equal that of the cache.
+        for freshChapter in self.chapters:
+            for cachedChapter in cachedManga.chapters:
+                if freshChapter.num == cachedChapter.num:
+                    freshChapter.url = cachedChapter.url
+                    freshChapter.title = cachedChapter.title
+                    freshChapter.pages = cachedChapter.pages
+                    break
+
+        # For every chapter in the cached version, if it does NOT exist in the fresh version,
+        # add it to the list of chapters of the fresh manga.
+        for cachedChapter in cachedManga.chapters:
+            # Check if the cached chapter does not exist in the fresh manga
+            if not any([freshChapter.num == cachedChapter.num for freshChapter in self.chapters]):
+                self.chapters.append(cachedChapter)
+
+        # Finally, sort the chapters according to the order number
+        self.chapters.sort(key=lambda chapter: chapter.num)
+
+        # Update the parent-links of all chapters and pages
+        for chapter in self.chapters:
+            chapter.setParent(self)
+            for page in chapter.pages:
+                page.setParent(chapter)
+
+        logger.debug("Successfully updated '%s' from its cache.", self.title)
 
     ################################################################################################
     # SAVE
