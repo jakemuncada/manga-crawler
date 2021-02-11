@@ -42,7 +42,8 @@ class MangaCrawler:
         self._endEvent = Event()  # Event that signifies that the last chapter has been processed
         # and that the program should end once the pageQueue is empty.
 
-        self._failedUrls = Queue()  # The collection of URLs that failed to be downloaded.
+        self._failedChapters = Queue()  # The collection of chapters that failed to be processed.
+        self._failedPages = Queue()  # The collection of pages that failed to be downloaded.
 
     ################################################################################################
     # CRAWL
@@ -59,12 +60,12 @@ class MangaCrawler:
         self._endEvent = Event()  # Event that signifies that the last chapter
         # has been processed and that the program should end once the pageQueue is empty.
 
-        logger.debug('Start crawling through %d mangas...', len(self.mangaUrls))
+        self._failedChapters = Queue()  # The collection of chapters that failed to be processed.
+        self._failedPages = Queue()  # The collection of pages that failed to be downloaded.
+
+        logger.info('Start crawling through %d mangas...', len(self.mangaUrls))
 
         for mangaUrl in self.mangaUrls:
-
-            self._failedUrls = Queue()  # The collection of URLs that failed to be downloaded.
-
             if not self._killEvent.is_set():
                 self._crawl(mangaUrl)
 
@@ -94,19 +95,11 @@ class MangaCrawler:
         # or the user interrupts the process by pressing Ctrl + C.
         self.waitForCompletion(chapterThreads, pageThreads, pageQueue)
 
-        # Print the list of URLs that weren't downloaded
-        if not self._failedUrls.empty():
-            logger.info('Failed to download the following:')
-            while not self._failedUrls.empty():
-                logger.info('   %s', self._failedUrls.get())
-        else:
-            logger.debug('All URLs were successfully fetched with no failures.')
+        # Print the list of chapters and pages that weren't downloaded
+        self.displayUnsuccessfulItems()
 
-        try:
-            # Save the manga as a JSON file
-            self.manga.save(self.outputDir)
-        except Exception as err:  # pylint: disable=broad-except
-            logger.error("Failed to save '%s' JSON cache, %s", self.manga.title, err)
+        # Save the manga cache file
+        self.saveManga()
 
     ################################################################################################
     # FETCH MANGA
@@ -274,7 +267,7 @@ class MangaCrawler:
                                      chapter.url, self.manga.title, err)
                         logger.exception(err)
                         chapterReady = False
-                        self._failedUrls.put(chapter.url)
+                        self._failedChapters.put(chapter)
                 else:
                     # If the chapter already has pages in its list,
                     # we can process those without fetching the chapter.
@@ -287,12 +280,8 @@ class MangaCrawler:
                                      page.num, chapter.num)
                         pageQueue.put(page)
 
-                    try:
-                        # Save the manga as a JSON file
-                        self.manga.save(self.outputDir)
-                    except Exception as err:  # pylint: disable=broad-except
-                        logger.error("Failed to save '%s' JSON cache, %s",
-                                     self.manga.title, err)
+                    # Save the manga cache file
+                    self.saveManga()
 
             # Otherwise, do not process the chapter if all its pages have been downloaded already
             else:
@@ -328,24 +317,26 @@ class MangaCrawler:
 
             # If the pageQueue is empty, do nothing
             if not pageQueue.empty():
+
                 page = pageQueue.get()
 
                 # Process the page only if it hasn't been downloaded
                 if not page.isDownloaded:
 
-                    logger.info('Processing page %d of chapter %d...', page.num, page.chapter.num)
+                    logger.debug("Processing '%s' page %d of chapter %d...", page.mangaTitle, page.num, page.chapterNum)
 
                     # Download the image if the fetch block above did not raise an exception
                     try:
                         page.downloadImage(self.outputDir)
                     except Exception as err:  # pylint: disable=broad-except
-                        logger.error('Failed to download image of page %d: %s, %s',
-                                     page.num, page.imageUrl, err)
+                        logger.error("Failed to download image: '%s' page %d of chapter %d (%s), %s",
+                                     page.mangaTitle, page.num, page.chapterNum, page.imageUrl, err)
+                        self._failedPages.put(page)
 
                 # Otherwise, skip the page if it has already been downloaded
                 else:
                     logger.info("Skipping page %d of chapter %d...",
-                                page.num, page.chapter.num)
+                                page.num, page.chapterNum)
 
                 pageQueue.task_done()
 
@@ -373,3 +364,41 @@ class MangaCrawler:
             for t in pageThreads:
                 logger.debug('%s is terminating...', t.name)
                 t.join()
+
+    ################################################################################################
+    # PRINT FAILURES
+    ################################################################################################
+
+    def displayUnsuccessfulItems(self):
+        """
+        Display the chapters and pages that failed to be fetched.
+        """
+        if self._failedChapters.empty() and self._failedPages.empty():
+            logger.info('All chapters and pages were fetched successfully.')
+            return
+
+        logger.info('The following were fetched unsuccessfully:')
+
+        if not self._failedChapters.empty():
+            while not self._failedChapters.empty():
+                chapter = self._failedChapters.get()
+                logger.info("Chapter %d of '%s': %s", chapter.num, chapter.mangaTitle, chapter.url)
+
+        if not self._failedPages.empty():
+            while not self._failedPages.empty():
+                page = self._failedPages.get()
+                logger.info("Page %d of Chapter %d of '%s': %s",
+                            page.num, page.chapterNum, page.mangaTitle, page.url)
+
+    ################################################################################################
+    # SAVE MANGA
+    ################################################################################################
+
+    def saveManga(self):
+        """
+        Save the manga to its JSON cache file.
+        """
+        try:
+            self.manga.save(self.outputDir)
+        except Exception as err:  # pylint: disable=broad-except
+            logger.error("Failed to save '%s' cache file, %s", self.manga.title, err)
