@@ -242,8 +242,6 @@ class Page:
         """
         Download the image and save it to the output directory.
         """
-        self.isProcessed = True
-
         logger.debug("Downloading image of '%s' Chapter %d Page %d (%s) as '%s'...",
                      self.mangaTitle, self.chapterNum, self.num,
                      self.imageUrl, self.filename)
