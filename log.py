@@ -7,7 +7,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 # The maximum size of a log file
-MAX_BYTES = 10000000
+MAX_BYTES = 3000000
 
 # The number of log files to keep
 BACKUP_COUNT = 10
