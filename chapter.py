@@ -38,9 +38,6 @@ class Chapter:
         self.title = title
         self._directoryName = None  # Cache of the directoryName property
         self.pages = pages if pages is not None else []
-        logger.debug("Initialized '%s' Chapter %d: %s  (%s)  (%s)",
-                     manga.title, num, url, 'Untitled' if title is None else title,
-                     'No pages' if pages is None else str(len(pages)))
 
     @classmethod
     def fromJson(cls, manga, jsonData):
