@@ -54,7 +54,6 @@ class Chapter:
         Returns:
             Chapter: The instantiated Chapter.
         """
-        logger.debug('Instantiating a Chapter from its JSON representation...')
 
         num = jsonData['num']
         url = jsonData['url']
@@ -126,6 +125,17 @@ class Chapter:
             return False
         for page in self.pages:
             if not page.isDownloaded:
+                return False
+        return True
+
+    @property
+    def isProcessed(self):
+        """
+        True if and only if all of this chapter's pages are either downloaded or processed.
+        In other words, all of the pages are either downloaded or failed to be downloaded.
+        """
+        for page in self.pages:
+            if not page.isDownloaded and not page.isProcessed:
                 return False
         return True
 

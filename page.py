@@ -27,6 +27,8 @@ class Page:
         filePath (str): The full path of the downloaded image.
         filename (str): The filename of the downloaded image.
         isDownloaded (bool): True if the page image has already been downloaded.
+        isProcessed (bool): True if an attempt to download the image has been executed.
+            This will always initialize to False whenever a Page is instantiated.
     """
 
     ################################################################################################
@@ -44,6 +46,7 @@ class Page:
         self.filePath = filePath
         self.filename = filename
         self.isDownloaded = isDownloaded
+        self.isProcessed = False
 
     @classmethod
     def fromJson(cls, chapter, jsonData):
@@ -57,8 +60,6 @@ class Page:
         Returns:
             Page: The instantiated Page.
         """
-        logger.debug('Instantiating a Page from its JSON representation...')
-
         num = jsonData['num']
         pageUrl = jsonData['pageUrl']
         imageUrl = jsonData['imageUrl']
@@ -241,6 +242,8 @@ class Page:
         """
         Download the image and save it to the output directory.
         """
+        self.isProcessed = True
+
         logger.debug("Downloading image of '%s' Chapter %d Page %d (%s) as '%s'...",
                      self.mangaTitle, self.chapterNum, self.num,
                      self.imageUrl, self.filename)
