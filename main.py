@@ -9,6 +9,12 @@ from crawl import MangaCrawler
 
 OUTPUT_DIR = './output'
 
+CHAPTER_THREAD_COUNT = 1
+PAGE_THREAD_COUNT = 3
+
+MANGA_LIST = [
+]
+
 
 def main():
     """
@@ -20,7 +26,7 @@ def main():
     # Create the output directory
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    crawler = MangaCrawler(['https://stackoverflow.com'], 1, 3, OUTPUT_DIR)
+    crawler = MangaCrawler(MANGA_LIST, CHAPTER_THREAD_COUNT, PAGE_THREAD_COUNT, OUTPUT_DIR)
     crawler.crawl()
 
 

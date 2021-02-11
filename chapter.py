@@ -89,6 +89,8 @@ class Chapter:
         """
 
         # TODO Implement manga-specific getChapters
+        logger.debug("Parsing pages of '%s' Chapter %d from its soup...",
+                     self.manga.title, self.num, )
 
         pageUrls = [
             'https://xkcd.com/201',

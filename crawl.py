@@ -94,6 +94,9 @@ class MangaCrawler:
         for chapter in self.manga.chapters:
             self._chapterQueue.put(chapter)
 
+        logger.info("The manga '%s' has %d chapters. Downloading...",
+                    self.manga.title, len(self.manga.chapters))
+
         # Start the chapter downloader threads
         for idx in range(self.chapterThreadCount):
             threadName = f'ChapterDownloaderThread{idx+1}'
@@ -167,7 +170,8 @@ class MangaCrawler:
                 chapter.fetch()
                 chapterFetched = True
             except Exception as err:  # pylint: disable=broad-except
-                logger.error('Failed to fetch chapter %s, %s', chapter.url, err)
+                logger.error("Failed to fetch chapter %s of '%s', %s",
+                             chapter.url, self.manga.title, err)
                 chapterFetched = False
                 self._failedUrls.put(chapter.url)
 
@@ -206,7 +210,6 @@ class MangaCrawler:
             # If the pageQueue is empty, do nothing
             if not self._pageQueue.empty():
                 page = self._pageQueue.get()
-                logger.info('Processing page %d...', page.num)
 
                 # Fetch the page HTML and update its properties
                 try:
@@ -215,6 +218,7 @@ class MangaCrawler:
                 except Exception as err:  # pylint: disable=broad-except
                     logger.error('Failed to fetch page %s, %s', page.pageUrl, err)
                     pageFetched = False
+                logger.info('Processing page %d of chapter %d...', page.num, page.chapter.num)
 
                 # Download the image if the fetch block above did not raise an exception
                 try:
