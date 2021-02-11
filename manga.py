@@ -134,8 +134,20 @@ class Manga:
 
         logger.debug('Parsing manga title from soup (%s)...', self.url)
 
-        # TODO Implement manga-specific getTitle
-        title = 'SampleMangaTitle'
+        postTitleDivs = soup.find_all('div', 'post-title')
+        if len(postTitleDivs) != 1:
+            raise LookupError(f"There are {len(postTitleDivs)} instances of 'post-title' div.")
+        postTitleDiv = postTitleDivs[0]
+
+        h1Tag = postTitleDiv.find('h1')
+        if h1Tag is None:
+            raise LookupError("Cannot find <h1> tag inside 'post-title' div.")
+
+        for span in h1Tag.find_all('span'):
+            span.extract()
+
+        title = [x for x in h1Tag.stripped_strings][0]
+        title = title.replace('– Webtoon Manhwa Hentai', '').strip()
 
         logger.debug("Parsed manga title '%s' from soup.", title)
         return title
@@ -153,18 +165,20 @@ class Manga:
 
         logger.debug('Parsing manga chapters from soup (%s)...', self.url)
 
-        # TODO Implement manga-specific getChapters
+        chapterUrls = []
 
-        chapterUrls = [
-            'https://xkcd.com/100',
-            'https://xkcd.com/200',
-            'https://xkcd.com/300'
-        ]
+        chapterTags = soup('li', 'wp-manga-chapter')
+        for chapterTag in chapterTags:
+            chapterUrl = chapterTag.find('a').attrs['href']
+            chapterUrls.append(chapterUrl)
+        chapterUrls.reverse()
 
         # Instantiate a list of skeleton chapters (chapters containing only the url).
         chapters = []
         for idx, chapterUrl in enumerate(chapterUrls):
-            chapters.append(Chapter(self, idx + 1, chapterUrl))
+            chapterNum = idx + 1
+            chapterTitle = f'Chapter {chapterNum:03}'
+            chapters.append(Chapter(self, chapterNum, chapterUrl, chapterTitle))
 
         logger.debug("Parsed %d chapters from soup (%s).", len(chapters), self.url)
         return chapters
@@ -199,7 +213,6 @@ class Manga:
         Parameters:
             soup (BeautifulSoup): The manga's HTML soup.
         """
-        # TODO - Change the implementation below to fit the specifics of your manga
 
         logger.debug('Updating manga properties (%s) based on soup...', self.url)
 

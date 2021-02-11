@@ -5,7 +5,6 @@ A model of a page of a manga.
 import os
 import logging
 import weakref
-from bs4 import BeautifulSoup
 
 from downloader import Downloader
 
@@ -108,21 +107,7 @@ class Page:
         Returns:
             str: The URL of the page image.
         """
-
-        logger.debug('Parsing image URL of Chapter %d Page %d from soup...',
-                     self.chapter.num, self.num)
-
-        # TODO Implement manga-specific getImageUrl
-        imageUrl = 'https://imgs.xkcd.com/comics/vaccine_ordering.png'
-
-        logger.debug('Parsed image URL of Chapter %d Page %d from soup: %s',
-                     self.chapter.num, self.num, imageUrl)
-
-        return imageUrl
-
-    ##################################################
-    # UPDATE
-    ##################################################
+        raise AssertionError('The image URL should already have been provided.')
 
     def getImageFilename(self):
         """
@@ -187,28 +172,8 @@ class Page:
         Fetch the page HTML, parse it, and update the properties.
         Raises an error if the fetching or parsing failed.
         """
-
-        logger.debug("Fetching '%s' Chapter %d Page %d HTML from %s...",
-                     self.manga.title, self.chapter.num, self.num, self.pageUrl)
-
-        soup = None
-
-        # Send HTTP request to get page HTML
-        response, err = Downloader.get(self.pageUrl)
-        # If the HTTP request failed, raise the error
-        if err is not None:
-            raise err
-
-        logger.debug("Successfully fetched '%s' Chapter %d Page %d from %s...",
-                     self.manga.title, self.chapter.num, self.num, self.pageUrl)
-
-        logger.debug("Parsing '%s' Chapter %d Page %d into soup...",
-                     self.manga.title, self.chapter.num, self.num)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        logger.debug("Successfully parsed '%s' Chapter %d Page %d into soup.",
-                     self.manga.title, self.chapter.num, self.num)
-
-        self.updateWithSoup(soup)
+        raise AssertionError('The page does not have an HTML of its own, '
+                             'it only consists of an image.')
 
     def updateWithSoup(self, soup):
         """
@@ -218,21 +183,8 @@ class Page:
         Parameters:
             soup (BeautifulSoup): The page's HTML soup.
         """
-        # TODO - Change the implementation below to fit the specifics of your manga
-
-        logger.debug("Updating '%s' Chapter %d Page %d based on soup...",
-                     self.manga.title, self.chapter.num, self.num)
-
-        # Get the image URL
-        imageUrl = self.getImageUrl(soup)
-        self.imageUrl = imageUrl
-
-        # Get the filename for the download file (for later use)
-        filename = self.getImageFilename()
-        self.filename = filename
-
-        logger.debug("Updated '%s' Chapter %d Page %d.",
-                     self.manga.title, self.chapter.num, self.num)
+        raise AssertionError('The page does not have an HTML of its own, '
+                             'it only consists of an image.')
 
     ################################################################################################
     # DOWNLOAD IMAGE
@@ -250,10 +202,17 @@ class Page:
             raise AttributeError('Image URL not found.')
 
         if self.filename is None:
-            raise AttributeError('Image filename not found.')
+            self.filename = self.getImageFilename()
 
-        mangaDirName = self.manga.getDirectoryName()
-        chapterDirName = self.chapter.getDirectoryName()
+        mangaDirName = self.manga.directoryName
+        chapterDirName = self.chapter.directoryName
+
+        if mangaDirName is None:
+            raise AttributeError('Manga directory name not found.')
+
+        if chapterDirName is None:
+            raise AttributeError('Chapter directory name not found.')
+
         outputDir = os.path.join(outputDir, mangaDirName, chapterDirName)
 
         outputPath = os.path.join(outputDir, self.filename)
