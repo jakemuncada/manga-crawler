@@ -131,6 +131,7 @@ class MangaCrawler:
             self.manga.fetch()
         except Exception as err:  # pylint: disable=broad-except
             logger.error('Failed to fetch manga %s, %s', mangaUrl, err)
+            logger.exception(err)
             return
 
         # Compare the freshly fetched manga from the cached version.
@@ -375,6 +376,7 @@ class MangaCrawler:
         except Exception as err:  # pylint: disable=broad-except
             logger.error("Failed to download image: '%s' page %d of chapter %d (%s), %s",
                          page.mangaTitle, page.num, page.chapterNum, page.imageUrl, err)
+            logger.exception(err)
             self._failedPages.put(page)
 
         page.isProcessed = True

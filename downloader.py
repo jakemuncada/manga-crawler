@@ -124,4 +124,5 @@ class Downloader:
             desc = 'The URL provided was somehow invalid.'
         except Exception as err:  # pylint: disable=broad-except
             desc = 'An unexpected error occurred.'
+            logger.excetion(err)
         return desc
