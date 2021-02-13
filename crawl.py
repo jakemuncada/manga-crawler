@@ -451,3 +451,4 @@ class MangaCrawler:
             self.manga.save(self.outputDir)
         except Exception as err:  # pylint: disable=broad-except
             logger.error("Failed to save '%s' cache file, %s", self.manga.title, err)
+            logger.exception(err)
