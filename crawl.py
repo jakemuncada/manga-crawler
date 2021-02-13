@@ -35,15 +35,27 @@ class MangaCrawler:
         self.pageThreadCount = pageThreadCount
         self.outputDir = outputDir
 
-        self.isCrawling = False  # True if the crawling process is currently ongoing.
-        self.manga = None  # The manga currently being crawled
+        # The attribute isCrawling is true if the crawling process is currently ongoing.
+        self.isCrawling = False
 
-        self._killEvent = Event()  # Event that, if set, will trigger threads to terminate.
-        self._endEvent = Event()  # Event that signifies that the last chapter has been processed
-        # and that the program should end once the pageQueue is empty.
+        # The manga currently being crawled
+        self.manga = None
 
-        self._failedChapters = Queue()  # The collection of chapters that failed to be processed.
-        self._failedPages = Queue()  # The collection of pages that failed to be downloaded.
+        # The list of chapter processor threads and page downloader threads
+        self._chapterThreads = []
+        self._pageThreads = []
+
+        # An event that, if set, will terminate all threads immediately.
+        self._killEvent = Event()
+
+        # An event that tells the crawler that the last chapter has been processed,
+        # and that the crawling process is complete once all the pages have been downloaded.
+        self._endEvent = Event()
+
+        # The collection of chapters that failed to be processed.
+        self._failedChapters = Queue()
+        # The collection of pages that failed to be downloaded.
+        self._failedPages = Queue()
 
     ################################################################################################
     # CRAWL
@@ -54,22 +66,27 @@ class MangaCrawler:
         Crawl through and download all of the manga URLs in the list, one by one.
         Can be interrupted by Ctrl+C.
         """
+
         self.isCrawling = True
 
-        self._killEvent = Event()  # If set, will trigger threads to terminate.
-
-        self._failedChapters = Queue()  # The collection of chapters that failed to be processed.
-        self._failedPages = Queue()  # The collection of pages that failed to be downloaded.
+        # Reset the attributes
+        self._killEvent = Event()
+        self._failedChapters = Queue()
+        self._failedPages = Queue()
 
         logger.info('Start crawling through %d mangas...', len(self.mangaUrls))
 
-        for mangaUrl in self.mangaUrls:
-
-            self._endEvent = Event()  # Event that signifies that the last chapter
-            # has been processed and that the program should end once the pageQueue is empty.
-
-            if not self._killEvent.is_set():
+        try:
+            for mangaUrl in self.mangaUrls:
                 self._crawl(mangaUrl)
+        except KeyboardInterrupt:
+            # If Ctrl+C is pressed by the user, send a kill signal
+            # and wait for the threads to finish.
+            logger.info('Keyboard interrupt detected.')
+            self.stop()
+
+        # Print the list of chapters and pages that weren't downloaded
+        self.displayUnsuccessfulItems()
 
     def _crawl(self, mangaUrl):
         """
@@ -91,14 +108,11 @@ class MangaCrawler:
         pageQueue = Queue()
 
         # Create the chapter processor threads and the page downloader threads
-        chapterThreads, pageThreads = self.startThreads(chapterQueue, pageQueue)
+        self.startThreads(chapterQueue, pageQueue)
 
         # Wait until either the manga is finished downloading
         # or the user interrupts the process by pressing Ctrl + C.
-        self.waitForCompletion(chapterThreads, pageThreads, pageQueue)
-
-        # Print the list of chapters and pages that weren't downloaded
-        self.displayUnsuccessfulItems()
+        self.waitForCompletion(pageQueue)
 
         # Save the manga cache file
         self.saveManga()
@@ -135,7 +149,6 @@ class MangaCrawler:
             return
 
         # Compare the freshly fetched manga from the cached version.
-
         cachePath = os.path.join(self.outputDir, self.manga.directoryName, 'cache.json')
         if os.path.exists(cachePath):
             logger.info('Loading previous download info of %s...', self.manga.title)
@@ -159,10 +172,10 @@ class MangaCrawler:
         Parameters:
             chapterQueue (Queue of Chapter): The queue containing the chapters to be processed.
             pageQueue (Queue of Page): The queue containing the pages to be downloaded.
-
-        Returns:
-            (list, list): The chapter processor thread list and the page downloader thread list.
         """
+
+        # Reset the end event
+        self._endEvent = Event()
 
         # Populate the chapter queue
         initialChapterQueueSize = 0
@@ -180,64 +193,54 @@ class MangaCrawler:
         if initialChapterQueueSize == 0:
             self._endEvent.set()
 
+        # Reset the thread lists
+        self._chapterThreads = []
+        self._pageThreads = []
+
         # Start the chapter downloader threads
-        _chapterThreads = []
         for idx in range(self.chapterThreadCount):
             threadName = f'ChapterDownloaderThread{idx+1}'
             t = Thread(name=threadName, target=self.chapterWorker,
                        args=(threadName, chapterQueue, pageQueue))
-            _chapterThreads.append(t)
+            self._chapterThreads.append(t)
             t.start()
 
         # Start the page downloader threads
-        _pageThreads = []
         for _ in range(self.pageThreadCount):
             threadName = f'PageDownloaderThread{idx+1}'
             t = Thread(name=threadName, target=self.pageWorker,
                        args=(threadName, pageQueue))
-            _pageThreads.append(t)
+            self._pageThreads.append(t)
             t.start()
-
-        return _chapterThreads, _pageThreads
 
     ################################################################################################
     # WAIT FOR COMPLETION
     ################################################################################################
 
-    def waitForCompletion(self, chapterThreads, pageThreads, pageQueue):
+    def waitForCompletion(self, pageQueue):
         """
-        Wait until the manga has finished downloading or the user interrupts the process
-        by pressing Ctrl + C.
+        Wait until the manga has finished downloading.
 
         Parameters:
-            chapterThreads (list of Thread): The list of chapter processor threads.
-            pageThreads (list of Thread): The list of page downloader threads.
             pageQueue (Queue of Page): The queue containing the pages to be downloaded.
         """
 
-        try:
-            # Wait until both chapterQueue and pageQueue are empty
-            while not self._endEvent.is_set() or not pageQueue.empty():
-                sleep(0.3)
+        # Wait until both chapterQueue and pageQueue are empty
+        while not self._endEvent.is_set() or not pageQueue.empty():
+            sleep(0.3)
 
-            # Wait for all the threads to finish
-            logger.debug('Nearly done... Waiting for the last download threads to finish...')
-            for t in chapterThreads:
-                logger.debug('Waiting for %s...', t.name)
-                t.join()
-                logger.debug('%s is done.', t.name)
-            for t in pageThreads:
-                logger.debug('Waiting for %s...', t.name)
-                t.join()
-                logger.debug('%s is done.', t.name)
+        # Wait for all the threads to finish
+        logger.debug('Nearly done... Waiting for the last download threads to finish...')
+        for t in self._chapterThreads:
+            logger.debug('Waiting for %s...', t.name)
+            t.join()
+            logger.debug('%s is done.', t.name)
+        for t in self._pageThreads:
+            logger.debug('Waiting for %s...', t.name)
+            t.join()
+            logger.debug('%s is done.', t.name)
 
-            logger.info('Finished downloading %s.', self.manga.title)
-
-        except KeyboardInterrupt:
-            # If Ctrl+C is pressed by the user, send a kill signal
-            # and wait for the threads to finish.
-            logger.info('Keyboard interrupt detected.')
-            self.stop(chapterThreads, pageThreads)
+        logger.info('Finished downloading %s.', self.manga.title)
 
     ################################################################################################
     # PROCESS CHAPTER
@@ -393,13 +396,14 @@ class MangaCrawler:
     # STOP
     ################################################################################################
 
-    def stop(self, chapterThreads, pageThreads):
+    def stop(self):
         """
-        Stop the crawling process.
+        Stop the crawling process. This is done by setting a kill event
+        which will tell the threads to break from their loops.
 
-        Parameters:
-            chapterThreads (list of Thread): The list of chapter processor threads.
-            pageThreads (list of Thread): The list of page downloader threads.
+        However, it will still allow the threads to finish their current task
+        before gracefully terminating. This means that the script will wait
+        for the active downloads to finish before exitting.
         """
         if self.isCrawling:
             self.isCrawling = False
@@ -407,12 +411,25 @@ class MangaCrawler:
             logger.info('Stopping threads... Please wait for active threads to finish...')
             self._killEvent.set()
 
-            for t in chapterThreads:
-                logger.debug('%s is terminating...', t.name)
-                t.join()
-            for t in pageThreads:
-                logger.debug('%s is terminating...', t.name)
-                t.join()
+            if self._chapterThreads:
+                for t in self._chapterThreads:
+                    if isinstance(t, Thread):
+                        logger.debug('%s is terminating...', t.name)
+                        t.join()
+                    else:
+                        logger.debug('Object inside _chapterThreads is not a Thread: %s', t)
+            else:
+                logger.debug('Chapter threads list is None or empty.')
+
+            if self._pageThreads:
+                for t in self._pageThreads:
+                    if isinstance(t, Thread):
+                        logger.debug('%s is terminating...', t.name)
+                        t.join()
+                    else:
+                        logger.debug('Object inside _chapterThreads is not a Thread: %s', t)
+            else:
+                logger.debug('Chapter threads list is None or empty.')
 
     ################################################################################################
     # PRINT FAILURES
@@ -448,7 +465,8 @@ class MangaCrawler:
         Save the manga to its JSON cache file.
         """
         try:
-            self.manga.save(self.outputDir)
+            if self.manga is not None:
+                self.manga.save(self.outputDir)
         except Exception as err:  # pylint: disable=broad-except
             logger.error("Failed to save '%s' cache file, %s", self.manga.title, err)
             logger.exception(err)
