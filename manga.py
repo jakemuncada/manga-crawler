@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 
 from chapter import Chapter
 from downloader import Downloader
+from impl import getSampleTitle, getSampleChapterUrls
 
 
 logger = logging.getLogger(__name__)
@@ -134,20 +135,14 @@ class Manga:
 
         logger.debug('Parsing manga title from soup (%s)...', self.url)
 
-        postTitleDivs = soup.find_all('div', 'post-title')
-        if len(postTitleDivs) != 1:
-            raise LookupError(f"There are {len(postTitleDivs)} instances of 'post-title' div.")
-        postTitleDiv = postTitleDivs[0]
+        ##################################################
+        # Site-specific implementation
+        ##################################################
+        title = getSampleTitle(soup)
+        ##################################################
 
-        h1Tag = postTitleDiv.find('h1')
-        if h1Tag is None:
-            raise LookupError("Cannot find <h1> tag inside 'post-title' div.")
-
-        for span in h1Tag.find_all('span'):
-            span.extract()
-
-        title = [x for x in h1Tag.stripped_strings][0]
-        title = title.replace('– Webtoon Manhwa Hentai', '').strip()
+        if title is None or title == '':
+            raise ValueError('Manga title is invalid: "%s".')
 
         logger.debug("Parsed manga title '%s' from soup.", title)
         return title
@@ -167,11 +162,11 @@ class Manga:
 
         chapterUrls = []
 
-        chapterTags = soup('li', 'wp-manga-chapter')
-        for chapterTag in chapterTags:
-            chapterUrl = chapterTag.find('a').attrs['href']
-            chapterUrls.append(chapterUrl)
-        chapterUrls.reverse()
+        ##################################################
+        # Site-specific implementation
+        ##################################################
+        chapterUrls = getSampleChapterUrls(soup)
+        ##################################################
 
         # Instantiate a list of skeleton chapters (chapters containing only the url).
         chapters = []

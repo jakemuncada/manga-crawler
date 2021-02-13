@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 from page import Page
 from downloader import Downloader
+from impl import getSampleImageUrls
 
 
 logger = logging.getLogger(__name__)
@@ -171,10 +172,11 @@ class Chapter:
 
         imageUrls = []
 
-        readingContents = soup.find('div', 'reading-content').find_all('div', 'page-break')
-        for div in readingContents:
-            src = div.find('img').attrs['src'].strip()
-            imageUrls.append(src)
+        ##################################################
+        # Site-specific implementation
+        ##################################################
+        imageUrls = getSampleImageUrls(soup)
+        ##################################################
 
         # Instantiate a list of skeleton pages (pages containing only the url).
         pages = []
@@ -243,14 +245,12 @@ class Chapter:
 
         # Get the title of the chapter from its soup.
         title = self.getTitle(soup)
+        self.title = title
 
         # Get the page URLs. This may involve fetching other pages
         # if the main manga page doesn't contain all the chapter URLs.
         # The list should be in increasing order in terms of page number.
         pages = self.getPages(soup)
-
-        # Update the properties
-        self.title = title
         self.pages = pages
 
         logger.debug("Chapter %d of '%s' has been updated.", self.num, self.mangaTitle)

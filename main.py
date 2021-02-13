@@ -2,23 +2,18 @@
 The main entry to the manga crawler script.
 """
 
-import os
 
+import os
 import logging
+
 from log import initializeLogger
 from crawl import MangaCrawler
 
 
-OUTPUT_DIR = './output'
 logger = logging.getLogger(__name__)
 
-
-
 CHAPTER_THREAD_COUNT = 1
-PAGE_THREAD_COUNT = 3
-
-MANGA_LIST = [
-]
+PAGE_THREAD_COUNT = 5
 
 
 def main():
