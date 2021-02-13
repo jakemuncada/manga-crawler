@@ -4,11 +4,15 @@ The main entry to the manga crawler script.
 
 import os
 
+import logging
 from log import initializeLogger
 from crawl import MangaCrawler
 
 
 OUTPUT_DIR = './output'
+logger = logging.getLogger(__name__)
+
+
 
 CHAPTER_THREAD_COUNT = 1
 PAGE_THREAD_COUNT = 3
@@ -32,4 +36,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as err:  # pylint: disable=broad-except
+        logger.error('An unexpected exception escaped to the surface, %s', err)
+        logger.exception(err)
