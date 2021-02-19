@@ -8,6 +8,7 @@ import logging
 
 from log import initializeLogger
 from crawl import MangaCrawler
+import impl
 
 
 logger = logging.getLogger(__name__)
@@ -24,9 +25,10 @@ def main():
     initializeLogger()
 
     # Create the output directory
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(impl.OUTPUT_DIR, exist_ok=True)
 
-    crawler = MangaCrawler(MANGA_LIST, CHAPTER_THREAD_COUNT, PAGE_THREAD_COUNT, OUTPUT_DIR)
+    crawler = MangaCrawler(impl.MANGA_LIST, CHAPTER_THREAD_COUNT,
+                           PAGE_THREAD_COUNT, impl.OUTPUT_DIR)
     crawler.crawl()
 
 
